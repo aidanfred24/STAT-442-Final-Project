@@ -1,0 +1,25 @@
+---
+title: "WesleySide Final Stat442"
+author: "Wesley Nelson"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r Packages, message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(readr)
+
+
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Data/Cleaning}
+
+toxins_2023 <- read_csv("C:/Users/wanel/OneDrive/Documents/GitHub/STAT-442-Final-Project/Datasets/2023_us.csv")
+View(toxins_2023)
+
+
+
+```
