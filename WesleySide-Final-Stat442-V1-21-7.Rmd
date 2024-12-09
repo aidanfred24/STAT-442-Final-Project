@@ -29,6 +29,7 @@ toxins_clean <- toxins_2023 %>%
   select(-c(24:29)) %>%
   mutate(`45. METAL CATEGORY` = ifelse(`45. METAL CATEGORY` == "Metal complound categories", "Metal compound categories",`45. METAL CATEGORY` )) 
 View(toxins_clean)
+summary(toxins_clean)
   
 
 
@@ -46,17 +47,17 @@ create_report(toxins_2023)
 
 ```{r Clustering}
 
-toxins_clustered_on_site <- toxins_clean %>%
-  select(c(51:65)) %>%
-  na.omit()
-View(toxins_clustered_on_site)
+# Clusters based on just On site totals
+toxins_clustered_on_site <- scale(toxins_clean[,c(51:64 )])
 
-toxins_clustered_off_site <- toxins_clean %>%
-  select(c(66:87)) %>%
-  na.omit()
-View(toxins_clustered_off_site)
+# Check for NA values
+sum(is.na(toxins_clustered_on_site))
 
+# Check for NaN values
+sum(is.nan(toxins_clustered_on_site))
 
+# Check for Inf values
+sum(is.infinite(toxins_clustered_on_site))
 
 fviz_nbclust(toxins_clustered_on_site, kmeans, method = "wss")
 fviz_nbclust(toxins_clustered_on_site, kmeans, method = "gap_stat")
@@ -64,6 +65,7 @@ fviz_nbclust(toxins_clustered_on_site, kmeans, method = "silhouette")
 
 
 # Clusters based on just Off site totals
+toxins_clustered_off_site <- scale(toxins_clean[,c(66:87 )])
 
 fviz_nbclust(toxins_clustered_off_site, kmeans, method = "wss")
 fviz_nbclust(toxins_clustered_off_site, kmeans, method = "gap_stat")
