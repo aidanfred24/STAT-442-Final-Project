@@ -29,6 +29,7 @@ toxins_2023 <- read_csv("C:/Users/wanel/OneDrive/Documents/GitHub/STAT-442-Final
 toxins_clean <- toxins_2023 %>%
   select(-c(24:29)) %>%
   mutate(`45. METAL CATEGORY` = ifelse(`45. METAL CATEGORY` == "Metal complound categories", "Metal compound categories",`45. METAL CATEGORY` )) 
+
 View(toxins_clean)
   
 
@@ -41,16 +42,20 @@ View(toxins_clean)
 
 # Data preparation for on-site
 toxins_clustered_on_site <- toxins_2023 %>%
-  select(c(51:53, 55, 56, 58:60, 62:65)) %>%
-  na.omit()
+  select(c(51:53, 55, 56, 58:60, 62:65)) %>%  # Select specified columns
+  na.omit() %>%                              # Remove rows with missing values
+  filter(.[[ncol(.)]] != 0)                  # Remove rows where column 65 has a value of 0
 
 # Scaling the data
 toxins_clustered_on_site_scaled <- scale(toxins_clustered_on_site)
 
 # Data preparation for off-site
 toxins_clustered_off_site <- toxins_2023 %>%
-  select(c(66:71, 75, 76, 79:88)) %>%
-  na.omit()
+  select(c(66:71, 75, 76, 79:88)) %>%  # Select specified columns
+  na.omit() %>%                        # Remove rows with missing values
+  filter(.[[ncol(.)]] != 0)            # Remove rows where column 88 has a value of 0
+
+
 
 # Scaling the data
 toxins_clustered_off_site_scaled <- scale(toxins_clustered_off_site)
@@ -373,18 +378,6 @@ fviz_mfa_var(mfa_result,
              col.var = "cos2",          # Color by quality of representation
              gradient.cols = c("blue", "green", "red"),
              axes = c(1, 2))            # Specify dimensions to plot
-
-
-
-
-# Contributions of qualitative variables to Dimension 1
-fviz_contrib(mfa_result, element = "quali.var", axes = 1, top = 10)
-
-# Contributions of qualitative variables to Dimension 2
-fviz_contrib(mfa_result, element = "quali.var", axes = 2, top = 10)
-
-
-
 
 
 ```
