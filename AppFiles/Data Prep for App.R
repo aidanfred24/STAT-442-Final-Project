@@ -259,22 +259,26 @@ TRI23_states <- TRI23_states %>%
 TRI23_states <- TRI23_states %>%
   right_join(x = TRI23_states, y = states, by = c("STUSPS"))
 
+# write new shapefiles
 write_sf(TRI23_states, "TRI23_states.shp")
 write_sf(TRI23_counties, "TRI23_counties.shp")
 
-
+#read them back in
 TRI23_states <- read_sf("TRI23_states.shp")
 TRI23_counties <- read_sf("TRI23_counties.shp")
 
+# Test set to make sure it's correct
 TRI23_cnew <- TRI23_counties %>%
   filter(STATENA == "Alaska")
 
+#Test plot
 p1 <- ggplot(data = TRI23_cnew)+
   geom_sf_interactive(mapping = aes(fill = ttl_rls, 
                                     data_id = NAME))+
   coord_sf(xlim = c(-180, -120))
 p1
 
+#Add proportions to states
 TRI23_states <- TRI23_states %>%
   mutate(CAAC_prop = round((CAAC_cn / fclty_c) * 100, 2),
          mtl_prop = round((mtl_cnt / fclty_c) * 100, 2),
@@ -293,6 +297,7 @@ TRI23_states <- TRI23_states %>%
          treat_prop = round((treated / prd_wst) * 100, 2),
          rls_prop = round((ttl_rls / prd_wst) * 100, 2))
 
+#Add proportions to counties
 TRI23_counties <- TRI23_counties %>%
   mutate(CAAC_prop = round((CAAC_cn / fclty_c) * 100, 2),
          mtl_prop = round((mtl_cnt / fclty_c) * 100, 2),
@@ -310,3 +315,72 @@ TRI23_counties <- TRI23_counties %>%
          recyc_prop = round((recycld / prd_wst) * 100, 2),
          treat_prop = round((treated / prd_wst) * 100, 2),
          rls_prop = round((ttl_rls / prd_wst) * 100, 2))
+
+# PAGE 2 CLEANING
+
+X2023_us <- read_csv("C:/Users/aidan/Downloads/2023_us.csv")
+X2022_us <- read_csv("C:/Users/aidan/Downloads/2022_us.csv")
+X2021_us <- read_csv("C:/Users/aidan/Downloads/2021_us.csv")
+X2020_us <- read_csv("C:/Users/aidan/Downloads/2020_us.csv")
+X2019_us <- read_csv("C:/Users/aidan/Downloads/2019_us.csv")
+X2018_us <- read_csv("C:/Users/aidan/Downloads/2018_us.csv")
+X2017_us <- read_csv("C:/Users/aidan/Downloads/2017_us.csv")
+X2016_us <- read_csv("C:/Users/aidan/Downloads/2016_us.csv")
+X2015_us <- read_csv("C:/Users/aidan/Downloads/2015_us.csv")
+X2014_us <- read_csv("C:/Users/aidan/Downloads/2014_us.csv")
+X2013_us <- read_csv("C:/Users/aidan/Downloads/2013_us.csv")
+
+TRIDecade <- bind_rows(list(X2023_us, X2022_us, X2021_us,
+                            X2020_us, X2019_us, X2018_us,
+                            X2017_us, X2016_us, X2015_us,
+                            X2014_us, X2013_us))
+
+rm(X2023_us, X2022_us, X2021_us,
+   X2020_us, X2019_us, X2018_us,
+   X2017_us, X2016_us, X2015_us,
+   X2014_us, X2013_us)
+
+TRIDecade1 <- TRIDecade%>%
+  mutate(across(c(42, 44,  46:48), ~case_when(. == "YES" ~ TRUE,
+                                              . == "NO" ~ FALSE,
+                                              TRUE ~ as.logical(.)))) %>%
+  mutate(across(c(51:119), 
+                ~ifelse(TRIDecade$`50. UNIT OF MEASURE` == "Grams", 
+                        . * 0.00220462,
+                        .))) %>%
+  group_by(`1. YEAR`, 
+           `4. FACILITY NAME`,
+           `8. ST`,
+           `12. LATITUDE`, 
+           `13. LONGITUDE`,
+           `23. INDUSTRY SECTOR`)%>%
+  summarize(facility_count = n(),
+            CAAC_count = sum(`42. CLEAN AIR ACT CHEMICAL`),
+            metal_count = sum(`44. METAL`),
+            carcin_count = sum(`46. CARCINOGEN`),
+            pbt_count = sum(`47. PBT`),
+            pfas_count = sum(`48. PFAS`),
+            fugitive_air = sum(`51. 5.1 - FUGITIVE AIR`),
+            stack_air = sum(`52. 5.2 - STACK AIR`),
+            water = sum(`53. 5.3 - WATER`),
+            underground = sum(`54. 5.4 - UNDERGROUND`) + 
+              sum(`55. 5.4.1 - UNDERGROUND CL I`) + 
+              sum(`56. 5.4.2 - UNDERGROUND C II-V`),
+            landfills = sum(`57. 5.5.1 - LANDFILLS`)+
+              sum(`58. 5.5.1A - RCRA C LANDFILL`)+
+              sum(`59. 5.5.1B - OTHER LANDFILLS`),
+            other = sum(`63. 5.5.3B - OTHER SURFACE I`) + 
+              sum(`64. 5.5.4 - OTHER DISPOSAL`),
+            on_site_total = sum(`65. ON-SITE RELEASE TOTAL`),
+            off_site_total = sum(`88. OFF-SITE RELEASE TOTAL`),
+            recycled = sum(`115. 8.4 - RECYCLING ON SITE`)+
+              sum(`116. 8.5 - RECYCLING OFF SIT`),
+            treated = sum(`118. 8.7 - TREATMENT OFF SITE`)+
+              sum(`117. 8.6 - TREATMENT ON SITE`),
+            prod_waste = sum(`119. PRODUCTION WSTE (8.1-8.7)`),
+            total_release = sum(`107. TOTAL RELEASES`))
+
+write_csv(TRIDecade1, "TRIDecade.csv")
+
+TRIDecade <- read_csv("TRIDecade.csv")
+
