@@ -5,7 +5,7 @@ account: aidanfred24
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13555205
-bundleId: 9700204
+bundleId: 9806237
 url: https://aidanfred24.shinyapps.io/FinalProjectApp/
 version: 1
 asMultiple: FALSE

@@ -98,7 +98,8 @@ tab1Server <- function(id, metric_options, tooltips, captions,
             labs(title = paste(title_text, " by State in ", input$State),  # Dynamic title
                  caption = caption_text,  # Dynamic caption
                  fill= tooltip_text)+     # Dynamic legend title
-            theme(plot.caption = element_text(color = "#555666"))  # Change caption color
+            theme(plot.caption = element_text(color = "#555666"),
+                  plot.margin = margin(t = 0, r = 15, b = 0, l = 0, unit = "pt"))  # Change caption color
           
           # Make the plot interactive
           girafe(ggobj = p2,
@@ -106,7 +107,7 @@ tab1Server <- function(id, metric_options, tooltips, captions,
                                 opts_zoom(min = 1, max = 20, duration = 300), # Allow user to zoom
                                 opts_selection(type = "none"),
                                 opts_tooltip(css = "background-color: black;color: white;padding:10px;border-radius:10px 10px 10px 10px;")),# Disable lasso option (useless)
-                 width_svg = 10, # Change plot aspect ratio
+                 width_svg = 11, # Change plot aspect ratio
                  height_svg = 6)
           
           # Case to include Alaska
@@ -135,7 +136,7 @@ tab1Server <- function(id, metric_options, tooltips, captions,
           girafe(ggobj = p2,
                  options = list(opts_hover(css = "fill:green;stroke:black; transition: 0.2s ease-in-out;"), # Add hover, zoom, remove selection
                                 opts_zoom(min = 1, max = 20, duration = 300),
-                                opts_selection(type = "none"),
+                                opts_selection(type = "single", css = "fill:#90EE90; stroke:black;"),
                                 opts_tooltip(css = "background-color: black;color: white;padding:10px;border-radius:10px 10px 10px 10px;")),
                  width_svg = 10, # Aspect ratio change
                  height_svg = 5)
@@ -197,7 +198,13 @@ tab1Server <- function(id, metric_options, tooltips, captions,
           
         }
       })
-      
+     
+      return(list(
+        
+        state <- reactive(input$StateMaps_selected)
+        
+      ))
+         
     }
     
   )

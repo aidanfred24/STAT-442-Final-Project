@@ -1,7 +1,6 @@
 
 #basic shiny functions
 library(shiny)
-library(shinyBS)
 
 #fancy loading symbols
 library(shinycssloaders)
@@ -31,6 +30,7 @@ library(scales)
 
 #color palettes
 library(RColorBrewer)
+library(paletteer)
 
 # read in data files
 library(readr)
@@ -41,6 +41,7 @@ library(leaflet.extras)
 
 source("tab1Mod.R")
 source("tab2Mod.R")
+source("tab3Mod.R")
 source("HelpButton.R")
 
 # load in state/county-wise data
@@ -160,32 +161,47 @@ ui <- page_navbar(
     tab1UI("myModule", state_choices, metric_options)
   )
   ,
+  
+  nav_panel(
+    
+    title = "State Summary",
+    
+    tab2UI("myModule2", state_choices2, metric_options2[1:4])
+    
+  ),
+  
   # UI for profile panel
   nav_panel(
     title = "Facility Profile",     # Tab title
     
-    tab2UI("myModule2", state_choices2, metric_options2)
+    tab3UI("myModule3", state_choices2, metric_options2)
     
   ),
     
-  HelpButtonUI("myModule3")
+  HelpButtonUI("myModule4")
   
  )
 
 
 server <- function(input, output, session) {
   
-HelpButtonServer("myModule3")
+HelpButtonServer("myModule4")
   
 # PAGE 1 
 #====================================================================================
-tab1Server("myModule", metric_options, tooltips, captions, TRI23_states, TRI23_counties)
+tab1vars <- tab1Server("myModule", metric_options, tooltips, captions, TRI23_states, TRI23_counties)
 #====================================================================================
 
 # PAGE 2
 #====================================================================================
-tab2Server("myModule2", metric_options2, y_axis, methods, TRIDecade)
+tab2vars <- tab2Server("myModule2", TRIDecade, metric_options2[1:4], tab1vars)
+#==================================================================================== 
+ 
+# PAGE 3
 #====================================================================================
+tab3Server("myModule3", metric_options2, y_axis, methods, TRIDecade, tab2vars, tab1vars)
+#====================================================================================
+
 }
 
 shinyApp(ui, server)
