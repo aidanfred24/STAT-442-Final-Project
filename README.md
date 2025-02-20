@@ -1,7 +1,7 @@
 # STAT-442-Final-Project
 Analysis of Toxics Release Inventory Data from the US Environmental Protection Agency
 
-    The US Environmental Protection Agency makes much of its data available to the US public. Of this data, one of the most interesting
+The US Environmental Protection Agency makes much of its data available to the US public. Of this data, one of the most interesting
 is their "Toxics Release Inventory" (TRI). This inventory is an method of tracking the toxic waste management processes and amounts in 
 US facilities. Data is reported annually by individual facilities. Chemicals that are required to be reported are generally those that
 cause:
