@@ -38,10 +38,12 @@ library(readr)
 # libraries for fancy geographic maps (page 2)
 library(leaflet)
 library(leaflet.extras)
+library(tidygeocoder)
 
 source("tab1Mod.R")
 source("tab2Mod.R")
 source("tab3Mod.R")
+source("tab4Mod.R")
 source("HelpButton.R")
 
 # load in state/county-wise data
@@ -177,6 +179,14 @@ ui <- page_navbar(
     tab3UI("myModule3", state_choices2, metric_options2)
     
   ),
+  
+  nav_panel(
+    
+    title = "Address Search",
+    
+    tab4UI("myModule5")
+    
+  ),
     
   HelpButtonUI("myModule4")
   
@@ -201,6 +211,8 @@ tab2vars <- tab2Server("myModule2", TRIDecade, metric_options2[1:4], tab1vars)
 #====================================================================================
 tab3Server("myModule3", metric_options2, y_axis, methods, TRIDecade, tab2vars, tab1vars)
 #====================================================================================
+
+tab4Server("myModule5", TRIDecade)
 
 }
 
