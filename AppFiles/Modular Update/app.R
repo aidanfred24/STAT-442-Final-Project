@@ -150,14 +150,17 @@ methods <- setNames(colnames(TRIDecade[,13:18]),
 
 ui <- page_navbar(
   
+  id = "tab",
   title ="Toxic Release Inventory", # App title
-  selected = "Statewise",                  # Selected tab
+  selected = "statewise",                  # Selected tab
   collapsible = TRUE,
   theme = bs_theme(preset = "materia",     # Custom theme, "materia" bs preset
                    primary = "#000000"),
   
   # Define first panel
   nav_panel(
+    
+    value = "statewise",
     title = "Statewise",    #Tab title
     
     tab1UI("myModule", state_choices, metric_options)
@@ -166,6 +169,7 @@ ui <- page_navbar(
   
   nav_panel(
     
+    value = "statesum",
     title = "State Summary",
     
     tab2UI("myModule2", state_choices2, metric_options2[1:4])
@@ -174,6 +178,8 @@ ui <- page_navbar(
   
   # UI for profile panel
   nav_panel(
+    
+    value = "facprof",
     title = "Facility Profile",     # Tab title
     
     tab3UI("myModule3", state_choices2, metric_options2)
@@ -182,6 +188,7 @@ ui <- page_navbar(
   
   nav_panel(
     
+    value = "addsch",
     title = "Address Search",
     
     tab4UI("myModule5")
@@ -195,24 +202,26 @@ ui <- page_navbar(
 
 server <- function(input, output, session) {
   
-HelpButtonServer("myModule4")
+  current_tab <- reactive(input$tab)
   
-# PAGE 1 
-#====================================================================================
-tab1vars <- tab1Server("myModule", metric_options, tooltips, captions, TRI23_states, TRI23_counties)
-#====================================================================================
-
-# PAGE 2
-#====================================================================================
-tab2vars <- tab2Server("myModule2", TRIDecade, metric_options2[1:4], tab1vars)
-#==================================================================================== 
- 
-# PAGE 3
-#====================================================================================
-tab3Server("myModule3", metric_options2, y_axis, methods, TRIDecade, tab2vars, tab1vars)
-#====================================================================================
-
-tab4Server("myModule5", TRIDecade)
+  HelpButtonServer("myModule4", current_tab)
+    
+  # PAGE 1 
+  #====================================================================================
+  tab1vars <- tab1Server("myModule", metric_options, tooltips, captions, TRI23_states, TRI23_counties)
+  #====================================================================================
+  
+  # PAGE 2
+  #====================================================================================
+  tab2vars <- tab2Server("myModule2", TRIDecade, metric_options2[1:4], tab1vars)
+  #==================================================================================== 
+   
+  # PAGE 3
+  #====================================================================================
+  tab3Server("myModule3", metric_options2, y_axis, methods, TRIDecade, tab2vars, tab1vars)
+  #====================================================================================
+  
+  tab4Server("myModule5", TRIDecade)
 
 }
 
