@@ -27,13 +27,25 @@ HelpButtonServer <- function(id, currentTab) {
         
         if (currentTab() == "statewise") {
           
-          text <- "<div>This tab is meant for generating large-scale statistics at the 
-                   national or state level. The options panel allows you to select between
-                   the Mainland US, US including Alaska, and individual states/territories.
+          img <- "Guide1.png"
+          
+          text <- "<div style = 'align-text: center;'>This tab is meant for generating large-scale statistics at the 
+                   national or state level.</div><div><br><b>The options panel allows you to:</b><br><ul>
+                   <li><b>#1:</b> Select between the Mainland US, US including Alaska, and individual states/territories.
                    The national maps will display these statistics by state, while the state/territory
-                   maps with display them by county.<br>You may also select which statistic is
-                   displayed using the lower-most dropdown menu. Each Plot maybe downloaded for 
-                   future use.</div>"
+                   maps with display them by county.</li>
+                   <li><b>#2:</b> Select which statistic is displayed. Statistics include:<ul>
+                   <li>Toxic Chemical Totals</li>
+                   <li>Release Method Proportions</li>
+                   <li>Facility Counts by Chemical Type</li>
+                   <li>More</li></ul></li></ul></div>
+                   <div style = 'text-align: center;'><br>Each plot maybe downloaded for future use.</div>"
+          
+        } else if (currentTab() == "statesum"){
+          
+          img <- "Guide2.png"
+          
+          text <- NULL
           
         } else {
           
@@ -43,10 +55,11 @@ HelpButtonServer <- function(id, currentTab) {
         
         showModal(modalDialog(title = "Help",
                               tagList(
-                                div(renderImage({list(src = "www/Logo2.png", width = "80%")},
-                                            deleteFile = FALSE),
-                                    style = "text-align: center;"),
-                                HTML(text)
+                                div(
+                                  tags$img(src = img, width = "100%", style = "display: block; margin: 0 auto; padding: 0px;"),
+                                  style = "text-align: center; padding: 0px; margin-bottom: 0px;"
+                                ),
+                                HTML(text),
                                 ),
                               footer = modalButton("Close"),
                               easyClose = TRUE)) # button to close modal
