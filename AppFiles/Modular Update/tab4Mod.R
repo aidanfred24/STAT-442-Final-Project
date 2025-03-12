@@ -9,7 +9,9 @@ tab4UI <- function(id){
       
       title = "Options",
       
-      textInput(ns("Address"), "Enter Address:", value = NULL),
+      textInput(ns("Address"), "Enter Address:", 
+                value = NULL, 
+                placeholder = "[# and Street], [City], [State]"),
       
       uiOutput(ns("CoordError")),
       
@@ -19,7 +21,7 @@ tab4UI <- function(id){
                   value = 50,
                   step = 5),
       
-      actionButton(ns("SearchButton"), "Search")
+      actionButton(ns("SearchButton"), "Search/Refresh")
       
     ),
     
@@ -44,7 +46,7 @@ tab4UI <- function(id){
   
 }
 
-tab4Server <- function(id, Decade_Data) {
+tab4Server <- function(id, Decade_Data, tab3vars) {
   
   moduleServer(
     
@@ -52,15 +54,48 @@ tab4Server <- function(id, Decade_Data) {
     
     function(input, output, session){
       
-      coords <- eventReactive(input$SearchButton,{
+      coords <- eventReactive(input$SearchButton, {
         
-        coordtable <- geo(input$Address, full_results = TRUE)
+        if(input$Address != tab3vars$add()[3]){
+          
+          geo(input$Address, full_results = TRUE)
+          
+        } else {
+          
+          tibble(lat = tab3vars$add()[1], 
+                 long = tab3vars$add()[2],
+                 display_name = tab3vars$add()[3])
+          
+        }
+        })
+      
+      label <- eventReactive(input$SearchButton,{
         
+        if(input$Address != tab3vars$add()[3]){
+          
+          paste0("<b>Address: </b>", input$Address)
+        
+        } else {
+          
+          label_data <- Decade_Data %>%
+            filter(`12. LATITUDE` == as.numeric(tab3vars$add()[1]),
+                   `13. LONGITUDE` == as.numeric(tab3vars$add()[2]),
+                   `23. INDUSTRY SECTOR` == as.character(tab3vars$add()[4])) %>%
+            group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`) %>%
+            summarize(avg_release = round(mean(total_release), 2)) %>%
+            slice(1)
+          
+          paste0("<b>Facility:</b> ", label_data$`4. FACILITY NAME`,
+                 "<br><b>Industry: </b>", label_data$`23. INDUSTRY SECTOR`,
+                 "<br><b>Yearly Average Release: </b>", comma(label_data$avg_release), " lbs")
+          
+        }
       })
+      
         
       output$CoordError <- renderUI({
         
-        if (is.na(coords()$lat)){
+        if (is.na(coords()$long)){
           
           message <- tags$span(paste("Empty or Invalid Address"),
                                style = "color: red;")
@@ -122,7 +157,8 @@ tab4Server <- function(id, Decade_Data) {
             data = new_coords,
             icon = awesomeIcons(icon = "star",
                                 iconColor = "yellow",
-                                markerColor = "black") # Add a customizable icon for facility
+                                markerColor = "black"), # Add a customizable icon for facility
+            popup = ~HTML(label())
             
           ) %>%
           # Heatmap of nearby facility releases
@@ -147,6 +183,15 @@ tab4Server <- function(id, Decade_Data) {
                                            " lbs"))
         }
       })
+      
+      observeEvent(tab3vars$add(), {
+        
+        req(tab3vars$add()[3])
+        
+        updateTextInput(session, inputId = "Address", value = as.character(tab3vars$add()[3]))
+        
+      })
+      
     }
     
   )

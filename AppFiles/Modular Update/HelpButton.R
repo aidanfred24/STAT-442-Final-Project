@@ -45,11 +45,27 @@ HelpButtonServer <- function(id, currentTab) {
           
           img <- "Guide2.png"
           
-          text <- NULL
+          text <- "<div style = 'align-text: center;'> The State Summary tab provides more in-depth statistics and measurements
+                   for any given US state or territory. The two main plots display the top 10 facilities and industries
+                   by a chosen metric or release method.</div>
+                   <div><br><b>Useful Info for Highlighted Areas:</b><br>
+                      <ul><li><b>#1:</b> Select a state or US territory to view in the tab</li>
+                      <li><b>#2:</b> Select a metric to rank by in the plots shown in this tab. These metrics include:
+                        <ul><li>Overall totals for chemical release and individual release methods</li>
+                        <li>Totals for waste recycling, waste treatment, and overall waste</li>
+                      </ul></li>
+                      <li><b>#3:</b> Activates a logarithmic scale for the facility ranking. This makes the graph much easier
+                      to read when there are large differences between facilities.</li>
+                      <li><b>#4:</b> This card displays the percent difference between the median chemical
+                      release of the selected state and the national median release.</li></ul>
+                   <br><br><b>Tip:</b> Clicking on a Facility in the <b>top left</b> plot will automatically
+                   load that facility in the Facility Profile tab!</div>"
           
         } else {
           
-          text <- "Other Tab"
+          img <- NULL
+          
+          text <- "Coming Soon!"
           
         }
         
@@ -61,8 +77,9 @@ HelpButtonServer <- function(id, currentTab) {
                                 ),
                                 HTML(text),
                                 ),
-                              footer = modalButton("Close"),
-                              easyClose = TRUE)) # button to close modal
+                              footer = modalButton("Close"), # button to close modal
+                              easyClose = TRUE, # Click anywhere to close
+                              size = "l")) # large size
       })
     
        

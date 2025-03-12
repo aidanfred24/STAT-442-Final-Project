@@ -149,7 +149,7 @@ methods <- setNames(colnames(TRIDecade[,13:18]),
                       "Other Disposal Units"))
 
 ui <- page_navbar(
-  
+
   id = "tab",
   title ="Toxic Release Inventory", # App title
   selected = "statewise",                  # Selected tab
@@ -172,7 +172,7 @@ ui <- page_navbar(
     value = "statesum",
     title = "State Summary",
     
-    tab2UI("myModule2", state_choices2, metric_options2[1:4])
+    tab2UI("myModule2", state_choices2, c(metric_options2[1:4], methods))
     
   ),
   
@@ -213,15 +213,21 @@ server <- function(input, output, session) {
   
   # PAGE 2
   #====================================================================================
-  tab2vars <- tab2Server("myModule2", TRIDecade, metric_options2[1:4], tab1vars)
+  tab2vars <- tab2Server("myModule2", TRIDecade, c(metric_options2[1:4], methods), tab1vars)
   #==================================================================================== 
    
   # PAGE 3
   #====================================================================================
-  tab3Server("myModule3", metric_options2, y_axis, methods, TRIDecade, tab2vars, tab1vars)
+  tab3vars <- tab3Server("myModule3", metric_options2, y_axis, methods, TRIDecade, tab2vars, tab1vars)
+  
+  observeEvent(tab3vars$tab(),{
+    
+    updateNavbarPage(session, "tab", selected = tab3vars$tab())
+    
+    })
   #====================================================================================
   
-  tab4Server("myModule5", TRIDecade)
+  tab4Server("myModule5", TRIDecade, tab3vars)
 
 }
 

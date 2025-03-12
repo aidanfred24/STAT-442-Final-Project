@@ -26,6 +26,19 @@ tab3UI <- function(id, state_choices, metric_options) {
                   label = "Timeline Metric",
                   choices = metric_options),
       
+      tags$p("Search Address"),
+      
+      fluidRow(
+        column(6,
+               numericInput(inputId = ns("Location"), label = "Location #", 
+                            value = 1, min = 1, step = 1)),
+      
+      column(6,
+             actionButton(ns("SearchButton"),
+                          label = "Search"))
+      
+      ),
+      
       div(
         style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.9em; color: grey;",
         HTML("Using 2013-2023 release data, <br>sourced from the Environmental <br>Protection Agency.")
@@ -56,26 +69,7 @@ tab3UI <- function(id, state_choices, metric_options) {
       # Define card on grid space
       grid_card(
         area = "area0", # select "sub-area" from above
-        # Define content for card body
-        card_body(
-          # Nested grid container for 2 plots
-          grid_container(
-            layout = c(
-              "area0",
-              "area1"
-            ),
-            row_sizes = c( # Equal rows (same height plots)
-              "1fr",
-              "1fr"
-            ),
-            col_sizes = c( # Only 1 column
-              "1fr"
-            ),
-            gap_size = "10px",
-            
-            # Grid card for bottom area1
-            grid_card(
-              area = "area1",
+
               # Content for grid card
               card_body(
                 # render timeline in area1
@@ -87,22 +81,6 @@ tab3UI <- function(id, state_choices, metric_options) {
               
               full_screen = TRUE    # Full screen option
             ),
-            
-            # card for top area0
-            grid_card(
-              area = "area0",
-              card_body(
-                # Fancy geographic heatmap
-                leafletOutput(ns("Map")) %>% 
-                  withSpinner(type = 4,   # Pipeline the spinner!
-                              color = "#000000") %>% 
-                  as_fill_carrier()),     # Tell graph to fill the card
-              
-              full_screen = TRUE
-            )
-          )
-        )
-      ),
       # Move to the left side of the grid
       grid_card(
         area = "area1", # top left area
@@ -204,6 +182,22 @@ tab3Server <- function(id, metric_options, axis_options, method_options,
       
     )
   })
+    
+    # Filter out chosen facility from chose state
+    TRIDecade2 <- reactive({
+      
+      # Require non-NULL facility name before executing
+      req(input$Facility %in% Decade_Data$`4. FACILITY NAME`)
+      
+      Decade_Data %>%
+        filter(`8. ST` == input$State,
+               `4. FACILITY NAME` == input$Facility)%>%
+        mutate(`1. YEAR` = as.character(`1. YEAR`)) %>%  #format year as a character
+        group_by(`12. LATITUDE`, `13. LONGITUDE`, `23. INDUSTRY SECTOR`) %>%    # group by unique location
+        mutate(facility_label = as.factor(cur_group_id())) %>% # Add label for each facility location
+        ungroup() # ungroup, keeping the labels
+      
+    })
   
   # Timeline for facilties
   output$timeline <- renderGirafe({
@@ -215,23 +209,14 @@ tab3Server <- function(id, metric_options, axis_options, method_options,
     title_text <- names(metric_options[which(metric_options == input$TimeMetric)])
     axis_text <- names(axis_options[which(axis_options == input$TimeMetric)])
     
-    # Filter out chosen facility from chose state
-    TRIDecade2 <- Decade_Data %>%
-      filter(`8. ST` == input$State,
-             `4. FACILITY NAME` == input$Facility)%>%
-      mutate(`1. YEAR` = as.character(`1. YEAR`)) %>%  #format year as a character
-      group_by(`12. LATITUDE`, `13. LONGITUDE`) %>%    # group by unique location
-      mutate(facility_label = as.factor(cur_group_id())) %>% # Add label for each facility location
-      ungroup() # ungroup, keeping the labels
-    
     # Timeline for facility
-    p3 <- ggplot(data = TRIDecade2)+
+    p3 <- ggplot(data = TRIDecade2())+
       aes(x = `1. YEAR`, 
           y = .data[[input$TimeMetric]])+ # Selected metric on y-axis
-      geom_line(mapping = aes(group = `12. LATITUDE`,  # Group them by coordinates (could also use location label)
+      geom_line(mapping = aes(group = facility_label,  # Group them by coordinates (could also use location label)
                               color = facility_label), # Color by location label 
                 linewidth = 2)+ # Thicker line for readability
-      geom_point_interactive(mapping = aes(data_id = interaction(`12. LATITUDE`, # Interactive layer, data_id is both the group and year
+      geom_point_interactive(mapping = aes(data_id = interaction(facility_label, # Interactive layer, data_id is both the group and year
                                                                  `1. YEAR`),
                                            tooltip = paste("Year: ", `1. YEAR`,  # Year and dynamic tooltip text
                                                            "\nLocation #: ", facility_label,
@@ -244,94 +229,20 @@ tab3Server <- function(id, metric_options, axis_options, method_options,
            x = "Year",
            y = axis_text,
            color = "Location #")+
-      theme(axis.title = element_text(size = 18), # Adjust size of plot elements
-            plot.title = element_text(size = 22),
-            axis.text.x = element_text(size = 14),
-            axis.text.y = element_text(size = 14))
+      theme(axis.title = element_text(size = 20), # Adjust size of plot elements
+            plot.title = element_text(size = 24),
+            axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16),
+            legend.position = "top",
+            legend.text = element_text(size = 16),
+            legend.title = element_text(size = 16))
     
     # Make timeline interactive
     girafe(ggobj = p3,
            width_svg = 18, # Change aspect ratio
-           height_svg = 6,
+           height_svg = 13,
            options = list(opts_hover(css = "fill:green;stroke:black;r: 10px; transition: all 0.1s ease;"),
                           opts_selection(type = "none"))) # Add hover, no selection
-    
-  })
-  
-  # Fancy heatmapppppppp
-  output$Map <- renderLeaflet({
-    
-    # Require facility selected before generation
-    req(input$Facility %in% Decade_Data$`4. FACILITY NAME`)
-    
-    # Filter to chosen facility
-    fac_of_int <- Decade_Data %>%
-      filter(`8. ST` == input$State,
-             `4. FACILITY NAME` == input$Facility) %>%
-      group_by(`4. FACILITY NAME`, `12. LATITUDE`, `13. LONGITUDE`) %>% # Group by facility and coords
-      summarize(total_release = sum(total_release))%>% # Add up releases
-      mutate(facility_label = as.factor(cur_group_id()))
-    
-    # Convert coords to a geometry column
-    fac_of_int <- st_as_sf(fac_of_int, #data
-                           coords = c("13. LONGITUDE", "12. LATITUDE"), # coord cols
-                           crs = 4326) # Coordinate system
-    
-    # Filter to all facilities in chosen state
-    facilities <- Decade_Data %>%
-      filter(`8. ST` == input$State) 
-    
-    # Convert coords to geometry col
-    facilities <- st_as_sf(facilities,
-                           coords = c("13. LONGITUDE", "12. LATITUDE"),
-                           crs = 4326) # coordinate system
-    
-    # Use sf package to calculate distance from chosen facility
-    distances <- st_distance(facilities, fac_of_int[1, ])
-    
-    # Set radius to 50km
-    radius <- set_units(50, "km")
-    
-    # Filter to facilities within 50km of chosen facility
-    nearby_facilities <- facilities %>%
-      mutate(distance = distances) %>% 
-      filter(distance <= radius | `4. FACILITY NAME` == input$Facility)%>%      
-      group_by(`4. FACILITY NAME`, geometry) %>% # Group by facility and coords
-      summarize(total_release = sum(total_release))
-    
-    # Leaflet map
-    leaflet() %>%
-      addTiles() %>%
-      # Add marker for the facility of interest
-      addAwesomeMarkers(
-        data = fac_of_int,
-        label = ~paste("Location: ", facility_label, "|", # Label for hover effect
-                       "Total Release: ",
-                       comma(round(total_release, 0)),
-                       "Pounds"),
-        popup = ~paste("Location: ", facility_label, "|", # Popup on click
-                       "Total Release: ",
-                       comma(round(total_release, 0)),
-                       "Pounds"),
-        icon = awesomeIcons(icon = "star",
-                            iconColor = "yellow",
-                            markerColor = "black") # Add a customizable icon for facility
-          
-      ) %>%
-      # Heatmap of nearby facility releases
-      addHeatmap(
-        data = nearby_facilities,
-        intensity = nearby_facilities$total_release, # Set intensity of heatmap
-        minOpacity = 20,
-        blur = 35,
-      ) %>%
-      addLegend(
-        position = "bottomleft", # legend position
-        values = nearby_facilities$total_release, # Values
-        title = HTML(paste("Toxic Release Over <br>10 Years (Pounds)")), # Plot/legend title
-        pal = colorNumeric(c("blue","green","yellow", "orange","red"), # Color scale to match heatmap
-                           domain = nearby_facilities$total_release) # Domain of legend
-      )
     
   })
   
@@ -423,6 +334,13 @@ tab3Server <- function(id, metric_options, axis_options, method_options,
     )
   })
   
+  observeEvent(input$Facility, {
+    
+    updateNumericInput(session, "Location", value = 1,
+                       max = max(unique(as.numeric(TRIDecade2()$facility_label))))
+    
+  })
+  
   observeEvent(tab2vars$state(),{
     
     updateSelectInput(session, "State", selected = tab2vars$state())
@@ -434,6 +352,43 @@ tab3Server <- function(id, metric_options, axis_options, method_options,
     updateSelectInput(session, "Facility", selected = tab2vars$fac())
     
   }
+  )
+  
+  add <- reactiveVal({
+    tibble(lat = NA, long = NA, display_name = "")
+    })
+  
+  observeEvent(input$SearchButton, {
+    
+    coord_data <- TRIDecade2() %>%
+      filter(facility_label == input$Location) %>% 
+      group_by(`12. LATITUDE`, `13. LONGITUDE`, `23. INDUSTRY SECTOR`) %>%
+      summarize(total_release = sum(total_release))
+    
+    table1 <- tibble(reverse_geo(lat = coord_data$`12. LATITUDE`,
+                                 long = coord_data$`13. LONGITUDE`),
+                     ind = coord_data$`23. INDUSTRY SECTOR`)
+    
+    add(table1)
+    
+  })
+  
+  tab <- eventReactive(input$SearchButton, {
+  
+      "addsch"
+    
+  })
+  
+  return(
+    
+    list(
+      
+      add = add,
+      tab = tab
+        
+      
+    )
+    
   )
   
   }
