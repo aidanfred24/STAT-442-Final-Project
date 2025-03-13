@@ -8,6 +8,14 @@ tab3UI <- function(id, state_choices, metric_options) {
     sidebar = sidebar(        # Define sidebar
       title = "Options",
       
+      tags$head(
+        tags$style(HTML("
+      .custom-numeric-input .form-control {
+        padding: 0px !important; /* Adjust inner spacing */
+      }
+    "))
+      ),
+      
       #Input for state selection
       selectInput(ns("State"),
                   label = "State",
@@ -31,7 +39,8 @@ tab3UI <- function(id, state_choices, metric_options) {
       fluidRow(
         column(6,
                numericInput(inputId = ns("Location"), label = "Location #", 
-                            value = 1, min = 1, step = 1)),
+                            value = 1, min = 1, step = 1) |>
+                 tagAppendAttributes(class = "custom-numeric-input")),
       
       column(6,
              actionButton(ns("SearchButton"),
@@ -40,8 +49,8 @@ tab3UI <- function(id, state_choices, metric_options) {
       ),
       
       div(
-        style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.9em; color: grey;",
-        HTML("Using 2013-2023 release data, <br>sourced from the Environmental <br>Protection Agency.")
+        style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.6em; color: grey;",
+        HTML("Using 2013-2023 release data, sourced from the <br>Environmental Protection Agency.")
       )
       
     ),
@@ -74,7 +83,7 @@ tab3UI <- function(id, state_choices, metric_options) {
               card_body(
                 # render timeline in area1
                 girafeOutput(ns("timeline"),
-                             height = "100vh") %>% # Adjust height
+                             width = "100%") %>% # Adjust height
                   withSpinner(type = 4,                  # Pipeline the spinner onto the visual!
                               color = "#000000") %>% 
                   as_fill_carrier()),              # Tell the graph to stay within the card
@@ -215,34 +224,36 @@ tab3Server <- function(id, metric_options, axis_options, method_options,
           y = .data[[input$TimeMetric]])+ # Selected metric on y-axis
       geom_line(mapping = aes(group = facility_label,  # Group them by coordinates (could also use location label)
                               color = facility_label), # Color by location label 
-                linewidth = 2)+ # Thicker line for readability
+                linewidth = .75)+ # Thicker line for readability
       geom_point_interactive(mapping = aes(data_id = interaction(facility_label, # Interactive layer, data_id is both the group and year
                                                                  `1. YEAR`),
                                            tooltip = paste("Year: ", `1. YEAR`,  # Year and dynamic tooltip text
                                                            "\nLocation #: ", facility_label,
                                                            "\n", title_text, ": ", comma(round(.data[[input$TimeMetric]], 0)))), # Add commas to numbers
-                             size = 5)+ # Bigger point size
+                             size = 2)+ # Bigger point size
       scale_y_continuous(label = comma, # add commas to y-labels
                          limits = c(0, NA))+ # Start from 0
       theme_minimal()+ # minimal theme
-      labs(title = paste(title_text, " by ", input$Facility), # Dynamic labels
+      labs(title = paste(title_text), # Dynamic labels
            x = "Year",
            y = axis_text,
            color = "Location #")+
-      theme(axis.title = element_text(size = 20), # Adjust size of plot elements
-            plot.title = element_text(size = 24),
-            axis.text.x = element_text(size = 16),
-            axis.text.y = element_text(size = 16),
+      theme(axis.title = element_text(size = 10), # Adjust size of plot elements
+            plot.title = element_text(size = 12, hjust = 0.5),
+            axis.text.x = element_text(size = 8),
+            axis.text.y = element_text(size = 8),
             legend.position = "top",
-            legend.text = element_text(size = 16),
-            legend.title = element_text(size = 16))
+            legend.text = element_text(size = 8),
+            legend.title = element_text(size = 8),
+            plot.margin = margin(t = 5, r = 0, b = 2, l = 2, unit = "pt"))
     
     # Make timeline interactive
     girafe(ggobj = p3,
-           width_svg = 18, # Change aspect ratio
-           height_svg = 13,
-           options = list(opts_hover(css = "fill:green;stroke:black;r: 10px; transition: all 0.1s ease;"),
-                          opts_selection(type = "none"))) # Add hover, no selection
+           height_svg = 5,
+           width_svg = 7,
+           options = list(opts_hover(css = "fill:green;stroke:black;r: 5px; transition: all 0.1s ease;"),
+                          opts_selection(type = "none"),
+                          opts_sizing(rescale = TRUE))) # Add hover, no selection
     
   })
   

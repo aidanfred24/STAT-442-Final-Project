@@ -21,7 +21,12 @@ tab4UI <- function(id){
                   value = 50,
                   step = 5),
       
-      actionButton(ns("SearchButton"), "Search/Refresh")
+      actionButton(ns("SearchButton"), "Search/Refresh"),
+      
+      div(
+        style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.6em; color: grey;",
+        HTML("Using 2013-2023 release data, sourced from the <br>Environmental Protection Agency.")
+      )
       
     ),
     
@@ -147,7 +152,10 @@ tab4Server <- function(id, Decade_Data, tab3vars) {
           mutate(distance = distances) %>% 
           filter(distance <= radius)%>%      
           group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`, geometry) %>% # Group by facility and coords
-          summarize(total_release = sum(total_release))
+          summarize(avg_release = round(mean(total_release, na.rm = TRUE), 2))
+        
+        pal1 <- colorNumeric(c("blue","green","yellow", "orange","red"), # Color scale
+                             domain = nearby_facilities$avg_release)
         
         # Leaflet map
         leaflet() %>%
@@ -158,28 +166,36 @@ tab4Server <- function(id, Decade_Data, tab3vars) {
             icon = awesomeIcons(icon = "star",
                                 iconColor = "yellow",
                                 markerColor = "black"), # Add a customizable icon for facility
-            popup = ~HTML(label())
+            popup = ~HTML(label()),
+            label = ~HTML(label())
             
           ) %>%
           # Heatmap of nearby facility releases
           addHeatmap(
             data = nearby_facilities,
-            intensity = ~total_release, # Set intensity of heatmap
+            intensity = ~avg_release, # Set intensity of heatmap
             minOpacity = 20,
             blur = 35,
           ) %>%
           addLegend(
             position = "bottomleft", # legend position
-            values = nearby_facilities$total_release, # Values
-            title = HTML(paste("Toxic Release Over <br>10 Years (Pounds)")), # Plot/legend title
+            values = nearby_facilities$avg_release, # Values
+            title = HTML(paste("Average Toxic <br>Release (Pounds)")), # Plot/legend title
             pal = colorNumeric(c("blue","green","yellow", "orange","red"), # Color scale to match heatmap
-                               domain = nearby_facilities$total_release) # Domain of legend
+                               domain = nearby_facilities$avg_release) # Domain of legend
           ) %>%
           addCircleMarkers(data = nearby_facilities,
-                           radius = 0.5,
+                           radius = 3,
+                           color = "black",
+                           fill = TRUE,
+                           fillColor = ~pal1(avg_release),
+                           stroke = TRUE,
+                           weight = 1, 
+                           fillOpacity = 1,
+                           opacity = 1,
                            popup = ~paste0("<b>Facility:</b> ", `4. FACILITY NAME`,
                                            "<br><b>Industry:</b> ", `23. INDUSTRY SECTOR`,
-                                           "<br><b>Chemical Release:</b> ", comma(round(total_release, 2)), 
+                                           "<br><b>Yearly Average Release:</b> ", comma(avg_release), 
                                            " lbs"))
         }
       })

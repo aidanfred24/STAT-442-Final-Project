@@ -21,8 +21,8 @@ tab1UI <- function(id, state_choices, metric_options){
                   choices = metric_options),
       
       div(
-        style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.9em; color: grey;",
-        HTML("Using 2023 release data, sourced <br>from the Environmental Protection <br>Agency.")
+        style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.6em; color: grey;",
+        HTML("Using 2023 release data, sourced from the <br>Environmental Protection Agency.")
       )
     ),
     
