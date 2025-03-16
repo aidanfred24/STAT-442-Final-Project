@@ -20,6 +20,7 @@ tab1UI <- function(id, state_choices, metric_options){
                   label = "Select Metric",
                   choices = metric_options),
       
+      # Data info at bottom of sidebar
       div(
         style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.6em; color: grey;",
         HTML("Using 2023 release data, sourced from the <br>Environmental Protection Agency.")
@@ -81,7 +82,7 @@ tab1Server <- function(id, metric_options, tooltips, captions,
         # if/else structure for input cases
         if (input$State == "United States Mainland"){
           
-          #Filter out non-mainland states
+          #Filter out non-mainland states/territories
           TRI23_snew <- State_Data %>%
             filter(!STUSPS %in% c("AK", "AS", "GU", "HI", "MP", "PR", "VI"))
           
@@ -105,8 +106,9 @@ tab1Server <- function(id, metric_options, tooltips, captions,
           girafe(ggobj = p2,
                  options = list(opts_hover(css = "fill:green;stroke:black; transition: 0.2s ease-in-out;"),  # Add css hover options
                                 opts_zoom(min = 1, max = 20, duration = 300), # Allow user to zoom
-                                opts_selection(type = "none"),
-                                opts_tooltip(css = "background-color: black;color: white;padding:10px;border-radius:10px 10px 10px 10px;")),# Disable lasso option (useless)
+                                opts_selection(type = "single", 
+                                               css = "fill:#90EE90; stroke:black;"), # Allow user to select a state
+                                opts_tooltip(css = "background-color: black;color: white;padding:10px;border-radius:10px 10px 10px 10px;")), # custom tooltip appearance
                  width_svg = 11, # Change plot aspect ratio
                  height_svg = 6)
           
@@ -134,9 +136,12 @@ tab1Server <- function(id, metric_options, tooltips, captions,
           
           # Interactive conversion
           girafe(ggobj = p2,
-                 options = list(opts_hover(css = "fill:green;stroke:black; transition: 0.2s ease-in-out;"), # Add hover, zoom, remove selection
-                                opts_zoom(min = 1, max = 20, duration = 300),
-                                opts_selection(type = "single", css = "fill:#90EE90; stroke:black;"),
+                 options = list(opts_hover(css = "fill:green;stroke:black; transition: 0.2s ease-in-out;"), # Add hover, zoom, state selection, custom tooltip
+                                opts_zoom(min = 1, 
+                                          max = 20, 
+                                          duration = 300),
+                                opts_selection(type = "single", 
+                                               css = "fill:#90EE90; stroke:black;"),
                                 opts_tooltip(css = "background-color: black;color: white;padding:10px;border-radius:10px 10px 10px 10px;")),
                  width_svg = 10, # Aspect ratio change
                  height_svg = 5)
@@ -144,7 +149,7 @@ tab1Server <- function(id, metric_options, tooltips, captions,
           # Case for individual state selection  
         } else {
           
-          # Custom bounds for Alaska and American Samoa
+          # Custom bounds for Alaska and American Samoa (ensures proper plotting)
           if (input$State == "Alaska"){
             
             xlim1 <- c(-180, -120)
@@ -176,8 +181,8 @@ tab1Server <- function(id, metric_options, tooltips, captions,
                                               data_id = NAME,
                                               tooltip = paste0("State: ", input$State,  # State name
                                                                "\nCounty: ", str_to_title(NAME), # County name
-                                                               "\n", tooltip_text,
-                                                               ": ", format(.data[[input$Stat]], big.mark = ","))),
+                                                               "\n", tooltip_text, #Dynamic label
+                                                               ": ", format(.data[[input$Stat]], big.mark = ","))), # Formatted metric
                                 color = "black")+
             coord_sf(xlim = xlim1,   # Custom bounds from above (AK, AS)
                      ylim = ylim1)+
@@ -189,19 +194,37 @@ tab1Server <- function(id, metric_options, tooltips, captions,
           
           # Interactivity
           girafe(ggobj = p1,
-                 options = list(opts_hover(css = "fill:green;stroke:black; transition: 0.2s ease-in-out;"), # Add hover, zoom, remove selection
+                 options = list(opts_hover(css = "fill:green;stroke:black; transition: 0.2s ease-in-out;"), # Add hover, zoom
                                 opts_zoom(min = 1, max = 20, duration = 300),
-                                opts_selection(type = "none"),
-                                opts_tooltip(css = "background-color: black;color: white;padding:10px;border-radius:10px 10px 10px 10px;")),
+                                opts_selection(type = "none"), # No selection
+                                opts_tooltip(css = "background-color: black;color: white;padding:10px;border-radius:10px 10px 10px 10px;")), # Custom tooltip
                  width_svg = 10,  #adjust width and height of plot
                  height_svg = 6)
           
         }
       })
+      
+      # Reactive value for state selection
+      state <- reactive({
+        
+        # Assigns clicked state if on nationwide view
+        if(input$State == "United States (Mainland & Alaska)" | input$State == "United States Mainland"){
+          
+          input$StateMaps_selected
+        
+        # Assigns selected state/territory if on statewide view  
+        } else {
+          
+          input$State
+          
+        }
+        
+        })
      
+      # Return state selection for use in other modules
       return(list(
         
-        state <- reactive(input$StateMaps_selected)
+        state = state
         
       ))
          

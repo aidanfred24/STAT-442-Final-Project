@@ -3,6 +3,7 @@ HelpButtonUI <- function(id) {
   
   ns <- NS(id)
   
+    # Create new item on navigation bar
     nav_item(
       
     actionButton(ns("HelpButton"), # new namespace for button
@@ -25,11 +26,15 @@ HelpButtonServer <- function(id, currentTab) {
       # Show modal dialog on button press
       observeEvent(input$HelpButton, {
         
+        # If/else structure that checks the current tab value
+        # Statewise tab
         if (currentTab() == "statewise") {
           
+          # image for modal
           img <- "Guide1.png"
           
-          text <- "<div style = 'align-text: center;'>This tab is meant for generating large-scale statistics at the 
+          #HTML text for modal
+          text <- "<div style = 'text-align: center;'>This tab is meant for generating large-scale statistics at the 
                    national or state level.</div><div><br><b>The options panel allows you to:</b><br><ul>
                    <li><b>#1:</b> Select between the Mainland US, US including Alaska, and individual states/territories.
                    The national maps will display these statistics by state, while the state/territory
@@ -38,14 +43,19 @@ HelpButtonServer <- function(id, currentTab) {
                    <li>Toxic Chemical Totals</li>
                    <li>Release Method Proportions</li>
                    <li>Facility Counts by Chemical Type</li>
-                   <li>More</li></ul></li></ul></div>
+                   <li>More</li></ul></li></ul>
+                   <b>Tip: </b> Click on any state while in the nationwide view to automatically select it in the State
+                   and Facility Profile tabs! The same selection occurs when viewing a state/territory individually!</div>
                    <div style = 'text-align: center;'><br>Each plot maybe downloaded for future use.</div>"
           
+          # State Summary tab
         } else if (currentTab() == "statesum"){
           
+          # Reference image for modal
           img <- "Guide2.png"
           
-          text <- "<div style = 'align-text: center;'> The State Summary tab provides more in-depth statistics and measurements
+          #HTML text for modal
+          text <- "<div style = 'text-align: center;'> The State Summary tab provides more in-depth statistics and measurements
                    for any given US state or territory. The two main plots display the top 10 facilities and industries
                    by a chosen metric or release method.</div>
                    <div><br><b>Useful Info for Highlighted Areas:</b><br>
@@ -60,12 +70,15 @@ HelpButtonServer <- function(id, currentTab) {
                       release of the selected state and the national median release.</li></ul>
                    <br><b>Tip:</b> Clicking on a Facility in the <b>top left</b> plot will automatically
                    load that facility in the Facility Profile tab!</div>"
-          
+         
+          # Facility profile tab 
         } else if (currentTab() == "facprof"){
           
+          # Reference image for modal
           img <- "Guide3.png"
           
-          text <- "<div style = 'align-text: center;'> The Facility Profile tab attempts to give a broad overview
+          #text for modal
+          text <- "<div style = 'text-align: center;'> The Facility Profile tab attempts to give a broad overview
                    of a selected facility, showing important metrics of how they operate, what they operate on,
                    and the volume of their operations.</div>
                    <div><br><b>Useful Info for Highlighted Areas:</b><br>
@@ -86,11 +99,14 @@ HelpButtonServer <- function(id, currentTab) {
                         <li><b>PFAS Chemical: </b> Long lasting per- and polyfluoroalkyl substances linked to
                         harmful health affects</li></ul></li></ul></div>"
           
+          # Address Search tab
         } else if (currentTab() == "addsch") {
           
+          # Reference image
           img <- "Guide4.png"
           
-          text <- "<div>The Address Search tab allows for users to enter in any US address in order to gain
+          #HTML text for modal
+          text <- "<div style = 'text-align: center;'>The Address Search tab allows for users to enter in any US address in order to gain
                   a geographic understanding of the area surrounding the given address. This tab also interacts
                   with the Facility Profile tab, allowing you to search for any given facility's location (see 
                   Facility Profile tab Help button for more details).
@@ -110,11 +126,24 @@ HelpButtonServer <- function(id, currentTab) {
                       for the number of facilities in a given area and the potential area of immediate affect surrounding
                       those facilities.</div>"
           
+          # About tab
+        } else if (currentTab() == "about") {
+          
+          # App Logo
+          img <- "Logo2.png"
+          
+          # About page text
+          text <- "<div style = 'text-align: center'> <h4>Welcome to Tox HelpR!</h4>
+                   <br> Check the <b>About</b> tab to learn more about what this app can do and where it came from! </div>"
+          
+          # Error in tab value 
         } else {
           
+          #No image
           img <- NULL
           
-          text <- "Coming Soon!"
+          # Error message
+          text <- "Error in tab values: Please contact app admin regarding this issue."
           
         }
         

@@ -44,6 +44,7 @@ source("tab1Mod.R")
 source("tab2Mod.R")
 source("tab3Mod.R")
 source("tab4Mod.R")
+source("About.R")
 source("HelpButton.R")
 
 # load in state/county-wise data
@@ -151,7 +152,7 @@ methods <- setNames(colnames(TRIDecade[,13:18]),
 ui <- page_navbar(
 
   id = "tab",
-  title ="Toxic Release Inventory", # App title
+  title ="Tox HelpR", # App title
   selected = "statewise",                  # Selected tab
   collapsible = TRUE,
   theme = bs_theme(preset = "materia",     # Custom theme, "materia" bs preset
@@ -194,6 +195,15 @@ ui <- page_navbar(
     tab4UI("myModule5")
     
   ),
+  
+  nav_panel(
+    
+    value = "about",
+    title = "About",
+    
+    AboutUI("aboutModule")
+    
+  ),
     
   HelpButtonUI("myModule4")
   
@@ -213,7 +223,7 @@ server <- function(input, output, session) {
   
   # PAGE 2
   #====================================================================================
-  tab2vars <- tab2Server("myModule2", TRIDecade, c(metric_options2[1:4], methods), tab1vars)
+  tab2vars <- tab2Server("myModule2", TRIDecade, c(metric_options2[1:4], methods), tab1vars, state_choices2)
   #==================================================================================== 
    
   # PAGE 3
@@ -222,13 +232,16 @@ server <- function(input, output, session) {
   
   observeEvent(tab3vars$tab(),{
     
-    updateNavbarPage(session, "tab", selected = tab3vars$tab())
+    updateNavbarPage(session, "tab", selected = "addsch")
     
     })
   #====================================================================================
   
+  # PAGE 4
+  #====================================================================================
   tab4Server("myModule5", TRIDecade, tab3vars)
-
+  #====================================================================================
+  
 }
 
 shinyApp(ui, server)

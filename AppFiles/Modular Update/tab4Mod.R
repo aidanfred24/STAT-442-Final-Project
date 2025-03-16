@@ -3,26 +3,32 @@ tab4UI <- function(id){
   
   ns <- NS(id)
   
+  # Sidebar layout
   page_sidebar(
     
-    sidebar = sidebar(
+    sidebar = sidebar( #define sidebar
       
       title = "Options",
       
+      # Input box for address
       textInput(ns("Address"), "Enter Address:", 
                 value = NULL, 
-                placeholder = "[# and Street], [City], [State]"),
+                placeholder = "[# and Street], [City], [State]"), # address format for user
       
+      # Output for errors if any
       uiOutput(ns("CoordError")),
       
+      # Radius selection in miles
       sliderInput(ns("SelectRad"), "Radius (miles)", 
                   min = 0,
                   max = 100, 
                   value = 50,
                   step = 5),
       
+      # search button
       actionButton(ns("SearchButton"), "Search/Refresh"),
       
+      # Data info at bottom of sidebar
       div(
         style = "position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 0.6em; color: grey;",
         HTML("Using 2013-2023 release data, sourced from the <br>Environmental Protection Agency.")
@@ -30,17 +36,20 @@ tab4UI <- function(id){
       
     ),
     
+    # card for map
     card(
       
+      # enable full screen
       full_screen = TRUE,
       
       card_body(
         
+        # output leaflet map
         leafletOutput(ns("Map")) %>%
-          withSpinner(type = 4,
+          withSpinner(type = 4, # loading animation
                       size = 3,
                       color = "#000000") %>%
-          as_fill_carrier()
+          as_fill_carrier() # fill panel with loader (overflow possible without)
         
       )
       
@@ -59,70 +68,89 @@ tab4Server <- function(id, Decade_Data, tab3vars) {
     
     function(input, output, session){
       
-      coords <- eventReactive(input$SearchButton, {
+      # Find coordinates on search button press
+      coords <- reactiveVal({NULL})
         
-        if(input$Address != tab3vars$add()[3]){
+        # If tab4 search is used, use normal geo method
+        observeEvent(input$SearchButton,{
+
+          coords(geo(input$Address, full_results = TRUE))
           
-          geo(input$Address, full_results = TRUE)
-          
-        } else {
-          
-          tibble(lat = tab3vars$add()[1], 
-                 long = tab3vars$add()[2],
-                 display_name = tab3vars$add()[3])
-          
-        }
         })
+
+        # If tab3 search is used, use facility info passed in
+        observeEvent(tab3vars$add(),{  
+          
+          # Use tab3 facility info instead
+          coords(tibble(lat = tab3vars$add()[1], 
+                 long = tab3vars$add()[2],
+                 display_name = tab3vars$add()[3]))
+          
+          })
+
       
-      label <- eventReactive(input$SearchButton,{
-        
-        if(input$Address != tab3vars$add()[3]){
+      # Dynamic label/popup generation
+      label <- reactiveVal({NULL})
+      
+      #Use plain address if user enters address
+      observeEvent(input$SearchButton,{
           
-          paste0("<b>Address: </b>", input$Address)
+          # Label = user-entered address
+          label(paste0("<b>Address: </b>", input$Address))
         
-        } else {
+      })
+      
+      # Use facility info for label if tab3 search is used  
+      observeEvent(tab3vars$add(), {
           
+          # Get data for selected facility location
           label_data <- Decade_Data %>%
             filter(`12. LATITUDE` == as.numeric(tab3vars$add()[1]),
                    `13. LONGITUDE` == as.numeric(tab3vars$add()[2]),
                    `23. INDUSTRY SECTOR` == as.character(tab3vars$add()[4])) %>%
-            group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`) %>%
-            summarize(avg_release = round(mean(total_release), 2)) %>%
-            slice(1)
+            group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`) %>% # narrow to specific location
+            summarize(avg_release = round(mean(total_release), 2)) %>% # calculate average location release
+            slice(1) # ensure only 1 entry
           
-          paste0("<b>Facility:</b> ", label_data$`4. FACILITY NAME`,
+          #Location info
+         label(paste0("<b>Facility:</b> ", label_data$`4. FACILITY NAME`, # Display name, industry, and yearly average
                  "<br><b>Industry: </b>", label_data$`23. INDUSTRY SECTOR`,
-                 "<br><b>Yearly Average Release: </b>", comma(label_data$avg_release), " lbs")
+                 "<br><b>Yearly Average Release: </b>", comma(label_data$avg_release), " lbs"))
           
-        }
-      })
+        })
       
-        
+      # Output for potential errors
       output$CoordError <- renderUI({
         
-        if (is.na(coords()$long)){
+        # Check if address is invalid (no coordinates found)
+        if (is.null(coords()$display_name)){
           
+          # notify of invalid address
           message <- tags$span(paste("Empty or Invalid Address"),
                                style = "color: red;")
           
           return(message)
           
-        } else if (!grepl("United States", coords()$display_name)) {
+        # Check if not a US address
+        } else if (!grepl("United States", coords()$display_name) & coords()$display_name != "") {
           
+          # Notify of error (map will generate anyway)
           message <- tags$span(paste("Not a U.S. Address"),
                                style = "color: red;")
           
         } else {
           
+          # no error
           return(NULL)
           
         }
         
       })
       
-      
+      # Map output
       output$Map <- renderLeaflet({
         
+        # Don't return map if address is invalid
         if (is.na(coords()$lat)){
           
           return(NULL)
@@ -151,7 +179,7 @@ tab4Server <- function(id, Decade_Data, tab3vars) {
         nearby_facilities <- facilities %>%
           mutate(distance = distances) %>% 
           filter(distance <= radius)%>%      
-          group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`, geometry) %>% # Group by facility and coords
+          group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`, geometry) %>% # Group by facility, industry, and coords
           summarize(avg_release = round(mean(total_release, na.rm = TRUE), 2))
         
         pal1 <- colorNumeric(c("blue","green","yellow", "orange","red"), # Color scale
@@ -166,14 +194,14 @@ tab4Server <- function(id, Decade_Data, tab3vars) {
             icon = awesomeIcons(icon = "star",
                                 iconColor = "yellow",
                                 markerColor = "black"), # Add a customizable icon for facility
-            popup = ~HTML(label()),
+            popup = ~HTML(label()), # dynamic labels/popups
             label = ~HTML(label())
             
           ) %>%
           # Heatmap of nearby facility releases
           addHeatmap(
             data = nearby_facilities,
-            intensity = ~avg_release, # Set intensity of heatmap
+            intensity = ~avg_release, # Set intensity of heatmap (doesn't function how I hoped)
             minOpacity = 20,
             blur = 35,
           ) %>%
@@ -184,26 +212,28 @@ tab4Server <- function(id, Decade_Data, tab3vars) {
             pal = colorNumeric(c("blue","green","yellow", "orange","red"), # Color scale to match heatmap
                                domain = nearby_facilities$avg_release) # Domain of legend
           ) %>%
-          addCircleMarkers(data = nearby_facilities,
+          addCircleMarkers(data = nearby_facilities, # add circles for nearly facilities
                            radius = 3,
-                           color = "black",
+                           color = "black", # circle outline
                            fill = TRUE,
-                           fillColor = ~pal1(avg_release),
-                           stroke = TRUE,
-                           weight = 1, 
-                           fillOpacity = 1,
-                           opacity = 1,
-                           popup = ~paste0("<b>Facility:</b> ", `4. FACILITY NAME`,
+                           fillColor = ~pal1(avg_release), # fill circles by custom palette
+                           stroke = TRUE, # Allow outline
+                           weight = 1, # Width of stroke
+                           fillOpacity = 1, #solid fill
+                           opacity = 1, # solid outline
+                           popup = ~paste0("<b>Facility:</b> ", `4. FACILITY NAME`, # info for facilities when clicked
                                            "<br><b>Industry:</b> ", `23. INDUSTRY SECTOR`,
                                            "<br><b>Yearly Average Release:</b> ", comma(avg_release), 
                                            " lbs"))
         }
       })
       
+      #Observe when address is searched from tab3
       observeEvent(tab3vars$add(), {
         
-        req(tab3vars$add()[3])
+        req(tab3vars$add()[3]) # require non-null
         
+        #Fill address input with facility address
         updateTextInput(session, inputId = "Address", value = as.character(tab3vars$add()[3]))
         
       })
