@@ -17,6 +17,7 @@ This repository contains:
 
 * The original TRI data used in the analysis ("Datasets" Folder)
 * The reports and figures generated for the original project ("Final Project Documents")
+    * Originally focused on clustering and PCA for the facilities that report to the EPA
 * The R scripts/modules, shapefiles, cleaned data, and images used for the Shiny App ("AppFiles")
     * The main focus of this repo
     * Shapefiles include .dbf, .prj, .shx, .shp files
