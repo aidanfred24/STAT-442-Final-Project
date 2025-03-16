@@ -10,6 +10,10 @@ cause:
 * Significant adverse acute human health effects
 * Significant adverse environmental effects
 
+This app originally started as a final project for an Exploratory Data Analysis course (STAT 442) at South Dakota State University. 
+However, since then it has seen many improvements, including better functionality, user friendliness, and advanced features. Now it 
+serves as a fully operational environmental data analysis tool.
+
 Link to Shiny App
 https://aidanfred24.shinyapps.io/FinalProjectApp/
 
