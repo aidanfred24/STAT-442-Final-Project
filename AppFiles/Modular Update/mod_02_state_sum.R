@@ -116,7 +116,7 @@ mod_02_state_sum_ui <- function(id, state_choices, metric_options) {
 }
 
 mod_02_state_sum_server <- function(id, StateData, metric_options, 
-                                    tab1vars, state_choices) {
+                                    tab1vars, state_choices, tab3vars) {
   
   moduleServer(
     id,
@@ -386,6 +386,15 @@ mod_02_state_sum_server <- function(id, StateData, metric_options,
           selected = state_choices[which(
             names(state_choices) == tab1vars$state()
           )]
+        )
+      })
+      
+      # Sync with tab3 state selection
+      observeEvent(tab3vars$state(), {
+        updateSelectInput(
+          session, 
+          "State", 
+          selected = tab3vars$state()
         )
       })
       

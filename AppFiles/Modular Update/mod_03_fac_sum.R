@@ -461,7 +461,8 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
       # Return values
       return(list(
         add = add,
-        tab = tab
+        tab = tab,
+        state = reactive(input$State)
       ))
     }
   )

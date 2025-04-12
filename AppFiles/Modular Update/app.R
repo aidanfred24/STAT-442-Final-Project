@@ -81,10 +81,15 @@ ui <- page_navbar(
   id = "tab",
   title = "Tox HelpR",  # App title
   selected = "addsch",
-  collapsible = TRUE,
   theme = bs_theme(
+    version = 5,
     preset = "materia",
     primary = "#000000"
+  ),
+  fillable = TRUE,
+  navbar_options = navbar_options(
+    collapsible = TRUE,
+    bg = "#000000"
   ),
   
   # Define first panel
@@ -98,7 +103,7 @@ ui <- page_navbar(
   
   nav_panel(
     value = "statewise",
-    title = "National Statistics",
+    title = "National",
     mod_01_statewise_ui(
       "statewise",
       state_choices,
@@ -108,7 +113,7 @@ ui <- page_navbar(
   
   nav_panel(
     value = "statesum",
-    title = "State Summary",
+    title = "State",
     mod_02_state_sum_ui(
       "state_sum",
       state_choices2,
@@ -118,7 +123,7 @@ ui <- page_navbar(
   
   nav_panel(
     value = "facprof",
-    title = "Facility Profile",
+    title = "Facility",
     mod_03_fac_sum_ui(
       "fac_sum",
       state_choices2,
@@ -137,6 +142,7 @@ ui <- page_navbar(
   mod_05_help_button_ui(
     "help_button"
   )
+  
 )
 
 server <- function(input, output, session) {
@@ -166,7 +172,8 @@ server <- function(input, output, session) {
     TRIDecade,
     c(metric_options2[1:4], methods),
     tab1vars,
-    state_choices2
+    state_choices2,
+    tab3vars
   )
   
   # PAGE 3

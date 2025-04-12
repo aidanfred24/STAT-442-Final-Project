@@ -5,9 +5,8 @@ account: aidanfred24
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 13555205
-bundleId: 9978253
+bundleId: 10105042
 url: https://aidanfred24.shinyapps.io/FinalProjectApp/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: Logo1.webp|Logo2.webp

@@ -7,19 +7,27 @@ mod_04_add_sch_ui <- function(id) {
     
     sidebar = sidebar(  # define sidebar
       
-      title = "Options",
+      title = "Enter Address:",
       
       # Address input
       textInput(
         ns("Address"),
-        "Enter Address:", 
-        value = NULL,
+        label = NULL,
+        value = "Washington, DC",
         placeholder = "[# and Street], [City], [State]"
       ),
       
       # Error output
       uiOutput(ns("CoordError")),
       
+      # Search button
+      actionButton(
+        ns("SearchButton"), 
+        "Search",
+        icon = icon("magnifying-glass")
+      ),
+      
+      div(style = "margin-top: 50px;",
       # Radius selection
       sliderInput(
         ns("SelectRad"), 
@@ -28,12 +36,7 @@ mod_04_add_sch_ui <- function(id) {
         max = 100, 
         value = 50,
         step = 5
-      ),
-      
-      # Search button
-      actionButton(
-        ns("SearchButton"), 
-        "Search/Refresh"
+      )
       ),
       
       # Data source info
@@ -56,13 +59,7 @@ mod_04_add_sch_ui <- function(id) {
         uiOutput(
           ns("PlaceHolder"),
           fill = TRUE
-        ) %>% 
-          shinycssloaders::withSpinner(
-            type = 4,
-            size = 3,
-            color = "#000000"
-          ) %>%
-          as_fill_carrier()
+        )
       )
     )
   )
@@ -75,7 +72,12 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
     function(input, output, session) {
       
       # Coordinates reactive value
-      coords <- reactiveVal({NULL})
+      coords <- reactiveVal({
+        tidygeocoder::geo(
+          "Washington, DC",
+          full_results = TRUE
+          )
+      })
       
       # Handle direct address search
       observeEvent(input$SearchButton, {
@@ -97,7 +99,7 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
       })
       
       # Dynamic label/popup content
-      label <- reactiveVal({NULL})
+      label <- reactiveVal({"Address: Washington, DC"})
       
       # Set label for user-entered address
       observeEvent(input$SearchButton, {
@@ -114,16 +116,20 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
             `23. INDUSTRY SECTOR` == as.character(tab3vars$add()[4])
           ) %>%
           group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`) %>%
-          summarize(avg_release = round(mean(total_release), 2)) %>%
-          slice(1)
+          summarize(avg_release = round(mean(total_release), 2),
+                    avg_recycprop = round(mean(recyc_prop, na.rm = TRUE), 2))
         
         # Create HTML label
-        label(paste0(
+        label(
+          paste0(
           "<b>Facility:</b> ", label_data$`4. FACILITY NAME`,
           "<br><b>Industry: </b>", label_data$`23. INDUSTRY SECTOR`,
           "<br><b>Yearly Average Release: </b>", 
-          comma(label_data$avg_release), " lbs"
-        ))
+          comma(label_data$avg_release), " lbs",
+          "<br><b>Average Percent Recycled: </b>",
+          label_data$avg_recycprop, " %"
+          )
+        )
       })
       
       # Show coordinate errors
@@ -165,29 +171,48 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
           ) {
 
           leaflet::leafletOutput(
-            ns("Map"),
-          )
+            ns("Map")
+          )%>% 
+            shinycssloaders::withSpinner(
+              type = 4,
+              size = 3,
+              color = "#000000"
+            ) %>%
+            as_fill_carrier()
   
         } else {
           
-          popup <- div(
-            tags$img(
-              src = "Logo2.png",
-              width = "70%",
-              style = "display: block; margin: 0 auto; padding: 0px;"
-            ),
-            h1(
-              "Are There Chemical Releases Near You?",
-              style = "text-align: center;"
-            ),
-            br(),
-            h5(
-              "Enter an address and search to find out...",
-              style = "text-align: center; color: grey;"
-            )
-          )
+          uiOutput(
+            ns("popup")
+          )%>% 
+            shinycssloaders::withSpinner(
+              type = 4,
+              size = 3,
+              color = "#000000"
+            ) %>%
+            as_fill_carrier()
+          
         }
 
+      })
+      
+      output$popup <- renderUI({
+        div(
+          tags$img(
+            src = "Logo2.png",
+            width = "70%",
+            style = "display: block; margin: 0 auto; padding: 0px;"
+          ),
+          h1(
+            "Are There Chemical Releases Near You?",
+            style = "text-align: center;"
+          ),
+          br(),
+          h5(
+            "Enter an address and search to find out...",
+            style = "text-align: center; color: grey;"
+          )
+        )
       })
       
       # Generate map
@@ -220,12 +245,19 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
             mutate(distance = distances) %>% 
             filter(distance <= radius) %>%      
             group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`, geometry) %>%
-            summarize(avg_release = round(mean(total_release, na.rm = TRUE), 2))
+            summarize(avg_release = round(mean(total_release, na.rm = TRUE), 2),
+                      avg_recycprop = round(mean(recyc_prop, na.rm = TRUE), 2))
           
           # Color palette for release values
           pal1 <- leaflet::colorNumeric(
             c("blue", "green", "yellow", "orange", "red"),
             domain = nearby_facilities$avg_release
+          )
+          
+          # Color palette for release values
+          pal2 <- leaflet::colorNumeric(
+            c("red", "orange", "yellow", "green"),
+            domain = nearby_facilities$avg_recycprop
           )
           
           # Create map
@@ -247,17 +279,24 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               data = nearby_facilities,
               intensity = ~avg_release,
               minOpacity = 20,
-              blur = 35
+              blur = 35,
+              group = "Heatmap"
             ) %>%
             # Add legend
             leaflet::addLegend(
+              value = nearby_facilities$avg_release,
+              group = "Release",
               position = "bottomleft",
-              values = nearby_facilities$avg_release,
               title = HTML(paste("Average Toxic <br>Release (Pounds)")),
-              pal = leaflet::colorNumeric(
-                c("blue", "green", "yellow", "orange", "red"),
-                domain = nearby_facilities$avg_release
-              )
+              pal = pal1
+            ) %>%
+            leaflet::addLegend(
+              value = nearby_facilities$avg_recycprop,
+              group = "Recycling",
+              position = "bottomleft",
+              title = HTML(paste("Average Percent <br>Recycled")),
+              pal = pal2,
+              labFormat = leaflet::labelFormat(suffix = "%")
             ) %>%
             # Add markers for nearby facilities
             leaflet::addCircleMarkers(
@@ -275,8 +314,32 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
                 "<br><b>Industry:</b> ", `23. INDUSTRY SECTOR`,
                 "<br><b>Yearly Average Release:</b> ", 
                 comma(avg_release), " lbs"
-              )
-            )
+              ),
+              group = "Release" 
+            ) %>%
+            # Add markers for nearby facilities
+            leaflet::addCircleMarkers(
+              data = nearby_facilities,
+              radius = 3,
+              color = "black",
+              fill = TRUE,
+              fillColor = ~pal2(avg_recycprop),
+              stroke = TRUE,
+              weight = 1,
+              fillOpacity = 1,
+              opacity = 1,
+              popup = ~paste0(
+                "<b>Facility:</b> ", `4. FACILITY NAME`,
+                "<br><b>Industry:</b> ", `23. INDUSTRY SECTOR`,
+                "<br><b>Yearly Average Recycling:</b> ", 
+                comma(avg_recycprop), " %"
+              ),
+              group = "Recycling" 
+            ) %>%
+            leaflet::addLayersControl(
+              overlayGroups = c("Release", "Recycling", "Heatmap")
+              ) %>%
+            leaflet::hideGroup(group = "Recycling")
       })
       
       # Update address input when coming from tab3

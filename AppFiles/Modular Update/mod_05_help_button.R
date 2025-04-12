@@ -127,13 +127,18 @@ mod_05_help_button_server <- function(id, currentTab) {
                       <li><b>#2: </b> Adjust radius of search. Radius can be set
                       from 0 to 100 US survey miles from the given address</li>
                       <li><b>#3: </b>Legend for generated plot. Measures the 
-                      Average Yearly Chemical release of displayed facilities
-                      </li></ul></div>
+                      average yearly chemical release/recycling of facilities
+                      </li>
+                      <li><b>#4: </b>Select the layers displayed on the map. 
+                      Currently, users can choose between facility releases, 
+                      recycling, and toggling the heatmap feature. It is 
+                      recommended that only one of the release metrics be 
+                      selected at once, as points overlap</li></ul></div>
                       <div><b>Warning: </b>It is <b>IMPORTANT</b> not to confuse
-                      what this scale applies to. The legend on the plot 
+                      what the legend applies to. The legend on the plot 
                       corresponds to the color of the points that represent each 
                       facility. The color of the heatmap element (the blended 
-                      colors) should be used only as a reference for the number 
+                      colors) should be used only as a reference for the density 
                       of facilities in a given area and the potential area of 
                       immediate affect surrounding those facilities.</div>"
             
