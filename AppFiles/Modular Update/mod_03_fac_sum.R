@@ -7,6 +7,7 @@ mod_03_fac_sum_ui <- function(id, state_choices, metric_options) {
     
     sidebar = sidebar(  # Define sidebar
       title = "Options",
+      bg = "#EDEDED",
       
       # Custom class for smaller numeric input
       tags$head(

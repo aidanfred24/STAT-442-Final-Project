@@ -10,6 +10,7 @@ mod_02_state_sum_ui <- function(id, state_choices, metric_options) {
     sidebar = sidebar(
       
       title = "Options",
+      bg = "#EDEDED",
       
       # Input for state selection
       selectInput(

@@ -6,6 +6,7 @@ mod_01_statewise_ui <- function(id, state_choices, metric_options) {
   page_sidebar(
     sidebar = sidebar(
       title = "Options",
+      bg = "#EDEDED",
       
       # Input for state selection
       selectInput(

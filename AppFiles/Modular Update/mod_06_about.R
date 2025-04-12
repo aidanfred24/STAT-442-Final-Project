@@ -28,7 +28,7 @@ mod_06_about_ui <- function(id) {
       style = "margin-left: 10%;"
       
     ),
-    p("Tox HelpR offers a way to access, view, and analyze this TRI data in a 
+    p("Tox Online offers a way to access, view, and analyze this TRI data in a 
        way that is user friendly and efficient.",
       style = "text-align: center; margin-left: 10%; margin-right: 10%;"),
     p("This app originally started as a final project for an Exploratory Data 

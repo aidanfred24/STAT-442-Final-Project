@@ -8,6 +8,7 @@ mod_04_add_sch_ui <- function(id) {
     sidebar = sidebar(  # define sidebar
       
       title = "Enter Address:",
+      bg = "#EDEDED",
       
       # Address input
       textInput(

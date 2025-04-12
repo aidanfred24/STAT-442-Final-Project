@@ -79,7 +79,7 @@ labels <- setNames(
 
 ui <- page_navbar(
   id = "tab",
-  title = "Tox HelpR",  # App title
+  title = "Tox Online",  # App title
   selected = "addsch",
   theme = bs_theme(
     version = 5,
