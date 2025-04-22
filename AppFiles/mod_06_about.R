@@ -108,8 +108,8 @@ mod_06_about_ui <- function(id) {
           hr(),
           tags$ul(
             tags$li(
-              "Most tabs, except for the Statewise tab, utilize the past decade 
-               (2013-2023) of the EPA's TRI data. The Statewise tab only uses 
+              "Most tabs, except for the National tab, utilize the past decade 
+               (2013-2023) of the EPA's TRI data. The National tab only uses 
                the 2023 data from the TRI to give the most recent statistics for
                the United States"
             ),
