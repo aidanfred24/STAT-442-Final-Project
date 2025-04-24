@@ -80,6 +80,11 @@ labels <- setNames(
 ui <- page_navbar(
   id = "tab",
   title = "ToxOnline",  # App title
+  
+  header = tags$head(
+    includeHTML("GoogleAnalytics.html")
+  ),
+  
   selected = "addsch",
   theme = bs_theme(
     version = 5,
@@ -141,10 +146,6 @@ ui <- page_navbar(
   
   mod_05_help_button_ui(
     "help_button"
-  ),
-  
-  header = tags$head(
-    includeScript("GoogleAnalytics.js")
   )
 )
 
