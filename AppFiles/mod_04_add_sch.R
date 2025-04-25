@@ -302,7 +302,7 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
             # Add markers for nearby facilities
             leaflet::addCircleMarkers(
               data = nearby_facilities,
-              radius = 3,
+              radius = 3.5,
               color = "black",
               fill = TRUE,
               fillColor = ~pal1(avg_release),
@@ -321,7 +321,7 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
             # Add markers for nearby facilities
             leaflet::addCircleMarkers(
               data = nearby_facilities,
-              radius = 3,
+              radius = 3.5,
               color = "black",
               fill = TRUE,
               fillColor = ~pal2(avg_recycprop),
