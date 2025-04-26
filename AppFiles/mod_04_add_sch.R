@@ -100,11 +100,21 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
       })
       
       # Dynamic label/popup content
-      label <- reactiveVal({"Address: Washington, DC"})
+      label <- reactiveVal({
+        tibble(
+          table = "Address: Washington, DC",
+          flag = 0
+          )
+      })
       
       # Set label for user-entered address
       observeEvent(input$SearchButton, {
-        label(paste0("<b>Address: </b>", input$Address))
+        label(
+          tibble(
+            table = paste0("<b>Address: </b>", input$Address), 
+            flag = 0
+          )
+        )
       })
       
       # Set label for facility from tab3
@@ -122,13 +132,42 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
         
         # Create HTML label
         label(
-          paste0(
-          "<b>Facility:</b> ", label_data$`4. FACILITY NAME`,
-          "<br><b>Industry: </b>", label_data$`23. INDUSTRY SECTOR`,
-          "<br><b>Yearly Average Release: </b>", 
-          comma(label_data$avg_release), " lbs",
-          "<br><b>Average Percent Recycled: </b>",
-          label_data$avg_recycprop, " %"
+          tibble(
+            table = paste0(
+              "<h6 style='text-align:center; font-weight:600; color:#333; 
+                          margin:5px 0; padding:5px; 
+                          font-family:Helvetica;'>",
+              label_data$`4. FACILITY NAME`, "</h6>",
+              "<table style='width:100%; border-collapse: collapse;>",
+              "<tr style='background-color:#f2f2f2;'>
+                  <td style='padding:4px;'><b>Industry</b></td>
+                  <td style='padding:4px;'>", label_data$`23. INDUSTRY SECTOR`, 
+              "</td></tr>",
+              "<tr><td style='padding:4px;'><b>Percent Recycled</b></td>
+                  <td style='padding:4px;'>", 
+              comma(label_data$avg_recycprop), " %</td></tr>",
+              "<tr style='background-color:#f2f2f2;'>
+                  <td style='padding:4px;'><b>Chemicals</b></td>
+                  <td style='padding:4px;'>", 
+              ifelse(
+                label_data$carcin_sum > 0, 
+                "✓ Carcinogens<br>", 
+                "✗ Carcinogens<br>"),
+              ifelse(
+                label_data$CAAC_sum > 0, 
+                "✓ CAA Hazardous<br>", 
+                "✗ CAA Hazardous<br>"),
+              ifelse(
+                label_data$pbt_sum > 0, 
+                "✓ PBT Chemical<br>", 
+                "✗ PBT Chemical<br>"),
+              ifelse(
+                label_data$pfas_sum > 0, 
+                "✓ PFAS Chemical", 
+                "✗ PFAS Chemical"), "</td></tr>",
+              "</table>"
+            ),
+          flag = 1
           )
         )
       })
@@ -246,8 +285,14 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
             mutate(distance = distances) %>% 
             filter(distance <= radius) %>%      
             group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`, geometry) %>%
-            summarize(avg_release = round(mean(total_release, na.rm = TRUE), 2),
-                      avg_recycprop = round(mean(recyc_prop, na.rm = TRUE), 2))
+            summarize(
+              avg_release = round(mean(total_release, na.rm = TRUE), 2),
+              avg_recycprop = round(mean(recyc_prop, na.rm = TRUE), 2),
+              carcin_sum = sum(carcin_count, na.rm = TRUE),
+              CAAC_sum = sum(CAAC_count, na.rm = TRUE),
+              pbt_sum = sum(pbt_count, na.rm = TRUE),
+              pfas_sum = sum(pfas_count, na.rm = TRUE),
+              State = `8. ST`)
           
           # Color palette for release values
           pal1 <- leaflet::colorNumeric(
@@ -270,10 +315,9 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               icon = leaflet::awesomeIcons(
                 icon = "star",
                 iconColor = "yellow",
-                markerColor = "black"
+                markerColor = "black",
               ),
-              popup = ~HTML(label()),
-              label = ~HTML(label())
+              popup = ~HTML(as.character(label()[1])),
             ) %>%
             # Add heatmap layer
             leaflet.extras::addHeatmap(
@@ -310,11 +354,39 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               weight = 1,
               fillOpacity = 1,
               opacity = 1,
+              layerId = ~paste(`4. FACILITY NAME`, State, sep = "___"),
               popup = ~paste0(
-                "<b>Facility:</b> ", `4. FACILITY NAME`,
-                "<br><b>Industry:</b> ", `23. INDUSTRY SECTOR`,
-                "<br><b>Yearly Average Release:</b> ", 
-                comma(avg_release), " lbs"
+                "<h6 style='text-align:center; font-weight:600; color:#333; 
+                            margin:5px 0; padding:5px; 
+                            font-family:Helvetica;'>",
+                `4. FACILITY NAME`, "</h6>",
+                "<table style='width:100%; border-collapse: collapse;'>",
+                "<tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px;'><b>Industry</b></td>
+                <td style='padding:4px;'>", `23. INDUSTRY SECTOR`, "</td></tr>",
+                "<tr><td style='padding:4px;'><b>Average Release</b></td>
+                <td style='padding:4px;'>", 
+                comma(avg_release), " lbs</td></tr>",
+                "<tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px;'><b>Chemicals</b></td>
+                <td style='padding:4px;'>", 
+                ifelse(
+                  carcin_sum > 0, 
+                  "✓ Carcinogens<br>", 
+                  "✗ Carcinogens<br>"),
+                ifelse(
+                  CAAC_sum > 0, 
+                  "✓ CAA Hazardous<br>", 
+                  "✗ CAA Hazardous<br>"),
+                ifelse(
+                  pbt_sum > 0, 
+                  "✓ PBT Chemical<br>", 
+                  "✗ PBT Chemical<br>"),
+                ifelse(
+                  pfas_sum > 0, 
+                  "✓ PFAS Chemical", 
+                  "✗ PFAS Chemical"), "</td></tr>",
+                "</table>"
               ),
               group = "Release" 
             ) %>%
@@ -330,10 +402,37 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               fillOpacity = 1,
               opacity = 1,
               popup = ~paste0(
-                "<b>Facility:</b> ", `4. FACILITY NAME`,
-                "<br><b>Industry:</b> ", `23. INDUSTRY SECTOR`,
-                "<br><b>Yearly Average Recycling:</b> ", 
-                comma(avg_recycprop), " %"
+                "<h6 style='text-align:center; font-weight:600; color:#333; 
+                            margin:5px 0; padding:5px; 
+                            font-family:Helvetica;'>",
+                `4. FACILITY NAME`, "</h6>",
+                "<table style='width:100%; border-collapse: collapse;'>",
+                "<tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px;'><b>Industry</b></td>
+                <td style='padding:4px;'>", `23. INDUSTRY SECTOR`, "</td></tr>",
+                "<tr><td style='padding:4px;'><b>Percent Recycled: </b></td>
+                <td style='padding:4px;'>", 
+                comma(avg_recycprop), " %</td></tr>",
+                "<tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px;'><b>Chemicals</b></td>
+                <td style='padding:4px;'>", 
+                ifelse(
+                  carcin_sum > 0, 
+                  "✓ Carcinogens<br>", 
+                  "✗ Carcinogens<br>"),
+                ifelse(
+                  CAAC_sum > 0, 
+                  "✓ CAA Hazardous<br>", 
+                  "✗ CAA Hazardous<br>"),
+                ifelse(
+                  pbt_sum > 0, 
+                  "✓ PBT Chemical<br>", 
+                  "✗ PBT Chemical<br>"),
+                ifelse(
+                  pfas_sum > 0, 
+                  "✓ PFAS Chemical", 
+                  "✗ PFAS Chemical"), "</td></tr>",
+                "</table>"
               ),
               group = "Recycling" 
             ) %>%
@@ -352,6 +451,36 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
           value = as.character(tab3vars$add()[3])
         )
       })
+      
+      fac <- reactiveVal({NULL})
+      state <- reactiveVal({NULL})
+      
+      observeEvent(input$Map_marker_click, {
+        
+        if(as.numeric(label()[2])){
+          
+          click <- input$Map_marker_click
+          
+          full_id <- click$id
+          
+          # Separate the combined id back into Facility and State
+          parts <- strsplit(full_id, "___")[[1]]
+          clicked_facility <- parts[1]
+          clicked_state <- parts[2]
+          
+          state(clicked_state)
+          fac(clicked_facility)
+          
+        } else {NULL}
+        
+      })
+      
+      return(
+        list(
+          state = state,
+          fac = fac
+        )
+      )
     }
   )
 }

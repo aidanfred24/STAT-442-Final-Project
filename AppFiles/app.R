@@ -189,7 +189,8 @@ server <- function(input, output, session) {
     methods,
     TRIDecade,
     tab2vars,
-    tab1vars
+    tab1vars,
+    add_sch_vars
   )
   
   observeEvent(
@@ -204,7 +205,7 @@ server <- function(input, output, session) {
   )
   
   # PAGE 4
-  mod_04_add_sch_server(
+  add_sch_vars <- mod_04_add_sch_server(
     "add_sch",
     TRIDecade,
     tab3vars

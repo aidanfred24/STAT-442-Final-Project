@@ -166,14 +166,17 @@ mod_03_fac_sum_ui <- function(id, state_choices, metric_options) {
 
 mod_03_fac_sum_server <- function(id, metric_options, axis_options, 
                                   label_options, method_options, 
-                                  Decade_Data, tab2vars, tab1vars) {
+                                  Decade_Data, tab2vars, tab1vars,
+                                  add_sch_vars) {
   
   moduleServer(
     id, 
     function(input, output, session) {
       
+      
       # Update facility choices when state changes
       observe({
+        
         # Filter by selected state
         TRIDecade1 <- Decade_Data %>%
           filter(`8. ST` == input$State)
@@ -197,6 +200,7 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
           server = TRUE,
           options = list(maxOptions = 10000)
         )
+        
       })
       
       # Filter data for selected facility
@@ -426,6 +430,25 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
           session, 
           "Facility",
           selected = tab2vars$fac()
+        )
+      })
+      
+      # Sync with Search selection
+      observeEvent(add_sch_vars$state(), {
+        updateSelectInput(
+          session, 
+          "State", 
+          selected = add_sch_vars$state()
+        )
+      })
+      
+      # Sync with Search selection
+      observeEvent(add_sch_vars$fac(), {
+        
+        updateSelectizeInput(
+          session, 
+          "Facility",
+          selected = add_sch_vars$fac()
         )
       })
       
