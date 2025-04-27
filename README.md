@@ -22,13 +22,16 @@ This repository contains:
     * The main focus of this repo
     * Shapefiles include .dbf, .prj, .shx, .shp files
     * "Data Prep For App" file shows many tests and processes for cleaning data and exploring visualization methods
-    * "Original Design" folder contains the app prior to conversion to a modular format, "Modular Update" contains the most recent app files
+    * "AppFiles" contains the most recent app files including data, modules, and the core app script
 
 This originally started as a final project for an Exploratory Data Analysis course (STAT 442) at South Dakota State University. 
-However, since then it has narrowed its focus to the Shiny App, now called Tox HelpR, and seen many improvements, including 
+However, since then it has narrowed its focus to the Shiny App, now called ToxOnline, and seen many improvements, including 
 better functionality, user friendliness, and advanced features. Now it serves as a fully operational environmental data analysis tool.
 
-Link to Shiny App
+Link to current/official app:
+https://www.toxonline.net/
+
+Link to ShinyApps.io test version:
 https://aidanfred24.shinyapps.io/FinalProjectApp/
 
 Link to Original Data:
