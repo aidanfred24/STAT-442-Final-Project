@@ -7,14 +7,14 @@ mod_04_add_sch_ui <- function(id) {
     
     sidebar = sidebar(  # define sidebar
       
-      title = "Enter Address:",
+      title = "Search by Address:",
       bg = "#EDEDED",
       
       # Address input
       textInput(
         ns("Address"),
         label = NULL,
-        value = "Washington, DC",
+        value = "1600 Pennsylvania Avenue NW, Washington, D.C. 20500",
         placeholder = "[# and Street], [City], [State]"
       ),
       
@@ -57,10 +57,15 @@ mod_04_add_sch_ui <- function(id) {
     card(
       full_screen = TRUE,
       card_body(
-        uiOutput(
-          ns("PlaceHolder"),
-          fill = TRUE
-        )
+        leaflet::leafletOutput(
+          ns("Map")
+        ) %>% 
+          shinycssloaders::withSpinner(
+            size = 3,
+            color = "#000000",
+            type = 4
+          ) %>% 
+          as_fill_carrier()
       )
     )
   )
@@ -75,7 +80,7 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
       # Coordinates reactive value
       coords <- reactiveVal({
         tidygeocoder::geo(
-          "Washington, DC",
+          "1600 Pennsylvania Avenue NW, Washington, D.C. 20500",
           full_results = TRUE
           )
       })
@@ -101,19 +106,23 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
       
       # Dynamic label/popup content
       label <- reactiveVal({
-        tibble(
-          table = "Address: Washington, DC",
-          flag = 0
-          )
+        paste0("<table style='width:100%; 
+                              border-collapse: collapse;'><tr>
+                  <td style='padding:4px;'><b>Address: </b></td>
+                  <td style='padding:4px; text-align: center;'>
+               1600 Pennsylvania Avenue NW, Washington, D.C.
+               </td></tr></table>"
+        )
       })
       
       # Set label for user-entered address
       observeEvent(input$SearchButton, {
         label(
-          tibble(
-            table = paste0("<b>Address: </b>", input$Address), 
-            flag = 0
-          )
+          paste0("<table style='width:100%; 
+                  border-collapse: collapse;'><tr>
+                  <td style='padding:4px;'><b>Address: </b></td>
+                  <td style='padding:4px; text-align: center;'>", 
+                 input$Address, "</td></tr></table>")
         )
       })
       
@@ -126,48 +135,63 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
             `13. LONGITUDE` == as.numeric(tab3vars$add()[2]),
             `23. INDUSTRY SECTOR` == as.character(tab3vars$add()[4])
           ) %>%
-          group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`) %>%
+          group_by(`4. FACILITY NAME`,
+                   `23. INDUSTRY SECTOR`,
+                   `12. LATITUDE`,
+                   `13. LONGITUDE`) %>%
           summarize(avg_release = round(mean(total_release), 2),
-                    avg_recycprop = round(mean(recyc_prop, na.rm = TRUE), 2))
-        
+                    avg_recycprop = round(mean(recyc_prop, na.rm = TRUE), 2),
+                    carcin_sum = sum(carcin_count, na.rm = TRUE),
+                    CAAC_sum = sum(CAAC_count, na.rm = TRUE),
+                    pbt_sum = sum(pbt_count, na.rm = TRUE),
+                    pfas_sum = sum(pfas_count, na.rm = TRUE),
+                    min_year = median(min_year),
+                    max_year = median(max_year))
+
         # Create HTML label
         label(
-          tibble(
-            table = paste0(
-              "<h6 style='text-align:center; font-weight:600; color:#333; 
-                          margin:5px 0; padding:5px; 
-                          font-family:Helvetica;'>",
-              label_data$`4. FACILITY NAME`, "</h6>",
-              "<table style='width:100%; border-collapse: collapse;>",
-              "<tr style='background-color:#f2f2f2;'>
+          paste0(
+            "<h6 style='text-align:center; font-weight:600; color:#333; 
+                            margin:5px 0; padding:5px; 
+                            font-family:Helvetica;'>",
+            label_data$`4. FACILITY NAME`, "</h6>",
+            "<table style='width:100%; border-collapse: collapse;'>",
+            "<tr style='background-color:#f2f2f2;'>
                   <td style='padding:4px;'><b>Industry</b></td>
-                  <td style='padding:4px;'>", label_data$`23. INDUSTRY SECTOR`, 
-              "</td></tr>",
-              "<tr><td style='padding:4px;'><b>Percent Recycled</b></td>
-                  <td style='padding:4px;'>", 
-              comma(label_data$avg_recycprop), " %</td></tr>",
-              "<tr style='background-color:#f2f2f2;'>
-                  <td style='padding:4px;'><b>Chemicals</b></td>
-                  <td style='padding:4px;'>", 
-              ifelse(
-                label_data$carcin_sum > 0, 
-                "✓ Carcinogens<br>", 
-                "✗ Carcinogens<br>"),
-              ifelse(
-                label_data$CAAC_sum > 0, 
-                "✓ CAA Hazardous<br>", 
-                "✗ CAA Hazardous<br>"),
-              ifelse(
-                label_data$pbt_sum > 0, 
-                "✓ PBT Chemical<br>", 
-                "✗ PBT Chemical<br>"),
-              ifelse(
-                label_data$pfas_sum > 0, 
-                "✓ PFAS Chemical", 
-                "✗ PFAS Chemical"), "</td></tr>",
-              "</table>"
-            ),
-          flag = 1
+                  <td style='padding:4px; text-align:right;'>", 
+            label_data$`23. INDUSTRY SECTOR`, "</td></tr>",
+            "<tr>
+                  <td style='padding:4px;'><b>Years Operated</b></td>
+                  <td style='padding:4px;text-align:right;'>",
+            label_data$min_year, "-", label_data$max_year,
+            "<tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px;'><b>Average Release</b></td>
+                <td style='padding:4px; text-align:right;'>", 
+            comma(label_data$avg_release), " lbs</td></tr>",
+            "</td></tr>
+            <tr>
+                  <td style='padding:4px;'><b>Percent Recycled</b></td>
+                  <td style='padding:4px; text-align:right;'>", 
+            comma(label_data$avg_recycprop), " %</td></tr>",
+            "<tr style = 'background-color:#f2f2f2;'><td style='padding:4px;'>
+            <b>Chemicals</b></td><td style='padding:4px;'>", 
+            ifelse(
+              label_data$carcin_sum > 0, 
+              "✓ Carcinogens<br>", 
+              "✗ Carcinogens<br>"),
+            ifelse(
+              label_data$CAAC_sum > 0, 
+              "✓ CAA Hazardous<br>", 
+              "✗ CAA Hazardous<br>"),
+            ifelse(
+              label_data$pbt_sum > 0, 
+              "✓ PBT Chemical<br>", 
+              "✗ PBT Chemical<br>"),
+            ifelse(
+              label_data$pfas_sum > 0, 
+              "✓ PFAS Chemical", 
+              "✗ PFAS Chemical"), "</td></tr>",
+            "</table>"
           )
         )
       })
@@ -209,16 +233,8 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               "United States", 
               coords()$display_name)
           ) {
-
-          leaflet::leafletOutput(
-            ns("Map")
-          )%>% 
-            shinycssloaders::withSpinner(
-              type = 4,
-              size = 3,
-              color = "#000000"
-            ) %>%
-            as_fill_carrier()
+          
+          NULL
   
         } else {
           
@@ -231,34 +247,23 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               color = "#000000"
             ) %>%
             as_fill_carrier()
-          
         }
 
-      })
-      
-      output$popup <- renderUI({
-        div(
-          tags$img(
-            src = "Logo2.png",
-            width = "70%",
-            style = "display: block; margin: 0 auto; padding: 0px;"
-          ),
-          h1(
-            "Are There Chemical Releases Near You?",
-            style = "text-align: center;"
-          ),
-          br(),
-          h5(
-            "Enter an address and search to find out...",
-            style = "text-align: center; color: grey;"
-          )
-        )
       })
       
       # Generate map
       output$Map <- leaflet::renderLeaflet({
         
         req(!is.na(coords()$lat))
+        
+        if (!is.null(coords()) && 
+            !is.null(coords()$display_name) && 
+            !is.null(coords()$lat) && 
+            !is.na(coords()$lat) &&
+            grepl(
+              "United States", 
+              coords()$display_name)
+        ) {
           # Convert search coordinates to spatial object
           new_coords <- sf::st_as_sf(
             coords(),
@@ -284,7 +289,11 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
           nearby_facilities <- facilities %>%
             mutate(distance = distances) %>% 
             filter(distance <= radius) %>%      
-            group_by(`4. FACILITY NAME`, `23. INDUSTRY SECTOR`, geometry) %>%
+            group_by(
+              `4. FACILITY NAME`,
+              `23. INDUSTRY SECTOR`,
+              `8. ST`,
+              geometry) %>%
             summarize(
               avg_release = round(mean(total_release, na.rm = TRUE), 2),
               avg_recycprop = round(mean(recyc_prop, na.rm = TRUE), 2),
@@ -292,7 +301,9 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               CAAC_sum = sum(CAAC_count, na.rm = TRUE),
               pbt_sum = sum(pbt_count, na.rm = TRUE),
               pfas_sum = sum(pfas_count, na.rm = TRUE),
-              State = `8. ST`)
+              min_year = median(min_year),
+              max_year = median(max_year),
+              fac_label = as.factor(cur_group_id()))
           
           # Color palette for release values
           pal1 <- leaflet::colorNumeric(
@@ -317,7 +328,9 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
                 iconColor = "yellow",
                 markerColor = "black",
               ),
-              popup = ~HTML(as.character(label()[1])),
+              group = "Primary",
+              layerId = "Primary",
+              popup = ~HTML(as.character(label())),
             ) %>%
             # Add heatmap layer
             leaflet.extras::addHeatmap(
@@ -354,7 +367,11 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               weight = 1,
               fillOpacity = 1,
               opacity = 1,
-              layerId = ~paste(`4. FACILITY NAME`, State, sep = "___"),
+              layerId = ~paste(
+                `4. FACILITY NAME`,
+                `8. ST`, 
+                fac_label, 
+                sep = "___"),
               popup = ~paste0(
                 "<h6 style='text-align:center; font-weight:600; color:#333; 
                             margin:5px 0; padding:5px; 
@@ -363,11 +380,22 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
                 "<table style='width:100%; border-collapse: collapse;'>",
                 "<tr style='background-color:#f2f2f2;'>
                 <td style='padding:4px;'><b>Industry</b></td>
-                <td style='padding:4px;'>", `23. INDUSTRY SECTOR`, "</td></tr>",
-                "<tr><td style='padding:4px;'><b>Average Release</b></td>
-                <td style='padding:4px;'>", 
-                comma(avg_release), " lbs</td></tr>",
-                "<tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px; text-align:right;'>", 
+                `23. INDUSTRY SECTOR`, "</td></tr>",
+                "<tr>
+                <td style='padding:4px;'><b>Years Operated</b></td>
+                <td style='padding:4px;text-align:right;'>",
+                min_year, "-", max_year,
+                "</td></tr>
+                <tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px;'><b>Average Release</b></td>
+                <td style='padding:4px; text-align:right;'>", 
+                comma(avg_release), " lbs</td></tr>
+                <tr>
+                  <td style='padding:4px;'><b>Percent Recycled</b></td>
+                  <td style='padding:4px; text-align:right;'>", 
+                comma(avg_recycprop), " %</td></tr>
+                <tr style='background-color:#f2f2f2;'>
                 <td style='padding:4px;'><b>Chemicals</b></td>
                 <td style='padding:4px;'>", 
                 ifelse(
@@ -401,6 +429,11 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               weight = 1,
               fillOpacity = 1,
               opacity = 1,
+              layerId = ~paste(
+                `4. FACILITY NAME`,
+                `8. ST`, 
+                fac_label, 
+                sep = "____"),
               popup = ~paste0(
                 "<h6 style='text-align:center; font-weight:600; color:#333; 
                             margin:5px 0; padding:5px; 
@@ -408,12 +441,23 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
                 `4. FACILITY NAME`, "</h6>",
                 "<table style='width:100%; border-collapse: collapse;'>",
                 "<tr style='background-color:#f2f2f2;'>
-                <td style='padding:4px;'><b>Industry</b></td>
-                <td style='padding:4px;'>", `23. INDUSTRY SECTOR`, "</td></tr>",
-                "<tr><td style='padding:4px;'><b>Percent Recycled: </b></td>
-                <td style='padding:4px;'>", 
-                comma(avg_recycprop), " %</td></tr>",
-                "<tr style='background-color:#f2f2f2;'>
+                  <td style='padding:4px;'><b>Industry</b></td>
+                  <td style='padding:4px; text-align:right;'>", 
+                `23. INDUSTRY SECTOR`, "</td></tr>",
+                "<tr>
+                  <td style='padding:4px;'><b>Years Operated</b></td>
+                  <td style='padding:4px;text-align:right;'>",
+                min_year, "-", max_year,
+                "</td></tr>
+                <tr style='background-color:#f2f2f2;'>
+                <td style='padding:4px;'><b>Average Release</b></td>
+                <td style='padding:4px; text-align:right;'>", 
+                comma(avg_release), " lbs</td></tr>
+                <tr>
+                  <td style='padding:4px;'><b>Percent Recycled</b></td>
+                  <td style='padding:4px; text-align:right;'>", 
+                comma(avg_recycprop), " %</td></tr>
+                <tr style='background-color:#f2f2f2;'>
                 <td style='padding:4px;'><b>Chemicals</b></td>
                 <td style='padding:4px;'>", 
                 ifelse(
@@ -440,6 +484,8 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
               overlayGroups = c("Release", "Recycling", "Heatmap")
               ) %>%
             leaflet::hideGroup(group = "Recycling")
+          
+        } else {NULL}
       })
       
       # Update address input when coming from tab3
@@ -452,24 +498,34 @@ mod_04_add_sch_server <- function(id, Decade_Data, tab3vars) {
         )
       })
       
-      fac <- reactiveVal({NULL})
       state <- reactiveVal({NULL})
+      fac <- reactiveVal({NULL})
       
       observeEvent(input$Map_marker_click, {
         
-        if(as.numeric(label()[2])){
-          
-          click <- input$Map_marker_click
-          
-          full_id <- click$id
+        click <- input$Map_marker_click
+        
+        full_id <- click$id
+        
+        if (click$group == "Recycling"){
           
           # Separate the combined id back into Facility and State
-          parts <- strsplit(full_id, "___")[[1]]
-          clicked_facility <- parts[1]
+          parts <- strsplit(full_id, "____")[[1]]
+          clicked_fac <- parts[1]
           clicked_state <- parts[2]
           
           state(clicked_state)
-          fac(clicked_facility)
+          fac(clicked_fac)
+          
+        } else if (click$group == "Release"){
+          
+          # Separate the combined id back into Facility and State
+          parts <- strsplit(full_id, "___")[[1]]
+          clicked_fac <- parts[1]
+          clicked_state <- parts[2]
+
+          state(clicked_state)
+          fac(clicked_fac)
           
         } else {NULL}
         

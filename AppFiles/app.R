@@ -78,13 +78,13 @@ labels <- setNames(
 )
 
 ui <- page_navbar(
+  nav_item(shinyjs::useShinyjs()),
   id = "tab",
   title = "ToxOnline",  # App title
   
   header = tags$head(
     includeHTML("GoogleAnalytics.html")
   ),
-  
   selected = "addsch",
   theme = bs_theme(
     version = 5,

@@ -173,16 +173,16 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
     id, 
     function(input, output, session) {
       
+      facility_choices <- reactive({
+        
+        Decade_Data %>%
+          filter(`8. ST` == input$State) %>%
+          pull(`4. FACILITY NAME`) %>%
+          unique()
+      })
       
       # Update facility choices when state changes
-      observe({
-        
-        # Filter by selected state
-        TRIDecade1 <- Decade_Data %>%
-          filter(`8. ST` == input$State)
-        
-        # Get unique facilities
-        facility_choices1 <- unique(TRIDecade1$`4. FACILITY NAME`)
+      observeEvent(input$State, {
         
         # Initialize selectize
         updateSelectizeInput(
@@ -196,11 +196,10 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
         updateSelectizeInput(
           session,
           "Facility",
-          choices = facility_choices1,
+          choices = facility_choices(),
           server = TRUE,
           options = list(maxOptions = 10000)
         )
-        
       })
       
       # Filter data for selected facility
@@ -327,7 +326,11 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
       
       # Show top release method
       output$Method <- renderUI({
-        req(!is.null(input$Facility), !is.na(input$Facility), nzchar(input$Facility))
+        req(
+          !is.null(input$Facility), 
+          !is.na(input$Facility), 
+          nzchar(input$Facility)
+        )
         
         FindMethod <- Decade_Data %>%
           filter(
@@ -440,16 +443,20 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
           "State", 
           selected = add_sch_vars$state()
         )
+        
       })
       
       # Sync with Search selection
       observeEvent(add_sch_vars$fac(), {
         
-        updateSelectizeInput(
-          session, 
-          "Facility",
-          selected = add_sch_vars$fac()
-        )
+        shinyjs::delay(
+          2000,
+          updateSelectInput(
+            session, 
+            "Facility", 
+            selected = add_sch_vars$fac()
+          ))
+        
       })
       
       # Initialize empty address/location
