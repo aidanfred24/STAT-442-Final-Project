@@ -107,12 +107,12 @@ ui <- page_navbar(
   ),
   
   nav_panel(
-    value = "statewise",
-    title = "National",
-    mod_01_statewise_ui(
-      "statewise",
-      state_choices,
-      metric_options
+    value = "facprof",
+    title = "Facility",
+    mod_03_fac_sum_ui(
+      "fac_sum",
+      state_choices2,
+      metric_options2
     )
   ),
   
@@ -127,12 +127,12 @@ ui <- page_navbar(
   ),
   
   nav_panel(
-    value = "facprof",
-    title = "Facility",
-    mod_03_fac_sum_ui(
-      "fac_sum",
-      state_choices2,
-      metric_options2
+    value = "statewise",
+    title = "National",
+    mod_01_statewise_ui(
+      "statewise",
+      state_choices,
+      metric_options
     )
   ),
   

@@ -68,6 +68,8 @@ mod_03_fac_sum_ui <- function(id, state_choices, metric_options) {
         )
       ),
       
+      uiOutput(ns("LocationError")),
+      
       # Data source info
       div(
         style = paste(
@@ -216,6 +218,22 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
           group_by(`12. LATITUDE`, `13. LONGITUDE`, `23. INDUSTRY SECTOR`) %>%
           mutate(facility_label = as.factor(cur_group_id())) %>%
           ungroup()
+      })
+      
+      # Output for invalid location selection
+      output$LocationError <- renderUI({
+        # Check conditions
+        if(!is.na(input$Location) &&
+           nrow(TRIDecade2()) != 0 &&
+           (input$Location > max(as.numeric(TRIDecade2()$facility_label)) | 
+           input$Location < min(as.numeric(TRIDecade2()$facility_label)))){
+          
+          tags$span(
+            paste("Invalid Location Number"),
+            style = "color: red;"
+          )
+        } else{NULL}
+        
       })
       
       # Generate timeline
@@ -460,9 +478,7 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
       })
       
       # Initialize empty address/location
-      add <- reactiveVal({
-        NULL
-      })
+      add <- reactiveVal({NULL})
       
       # Handle search button click
       observeEvent(input$SearchButton, {
@@ -472,21 +488,43 @@ mod_03_fac_sum_server <- function(id, metric_options, axis_options,
           group_by(`12. LATITUDE`, `13. LONGITUDE`, `23. INDUSTRY SECTOR`) %>%
           summarize()
         
-        # Create location table
-        table1 <- tibble(
-          tidygeocoder::reverse_geo(
-            long = coord_data$`13. LONGITUDE`,
-            lat = coord_data$`12. LATITUDE`
-          ),
-          ind = coord_data$`23. INDUSTRY SECTOR`
-        )
-        
-        add(table1)
+        # Check for empty data
+        if(nrow(coord_data) != 0){
+          # Create location table
+          table1 <- tibble(
+            tidygeocoder::reverse_geo(
+              long = coord_data$`13. LONGITUDE`,
+              lat = coord_data$`12. LATITUDE`
+            ),
+            ind = coord_data$`23. INDUSTRY SECTOR`
+          )
+          
+          add(table1)
+        } else {NULL}
       })
       
-      # Tab switch on search
+      # Reactive value to switch tabs
       tab <- eventReactive(input$SearchButton, {
-        "addsch"
+        
+        
+        if(is.null(input$Location) || 
+           is.na(input$Location) || 
+           input$Location == ""){
+          
+          NULL
+          
+        # Check for invalid location
+        } else if(
+          input$Location > max(as.numeric(TRIDecade2()$facility_label)) || 
+          input$Location < min(as.numeric(TRIDecade2()$facility_label))){
+          
+          NULL
+        } else {
+          
+          "addsch"
+          
+        }
+        
       })
       
       # Return values
