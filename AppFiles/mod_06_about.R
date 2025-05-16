@@ -93,6 +93,15 @@ mod_06_about_ui <- function(id) {
                 "here",
                 style = "color: #309676;"
               )
+            ),
+            tags$li(
+              "For bug reporting, feature suggestions, and support, email",
+              tags$a(
+                href = "mailto: toxonline@outlook.com",
+                target = "_blank",
+                "toxonline@outlook.com",
+                style = "color: #309676;"
+              )
             )
           ),
           height = "95%"
