@@ -97,9 +97,9 @@ mod_06_about_ui <- function(id) {
             tags$li(
               "For bug reporting, feature suggestions, and support, email",
               tags$a(
-                href = "mailto: toxonline@outlook.com",
+                href = "mailto: toxonline25@outlook.com",
                 target = "_blank",
-                "toxonline@outlook.com",
+                "toxonline25@outlook.com",
                 style = "color: #309676;"
               )
             )

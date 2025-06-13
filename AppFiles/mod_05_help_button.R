@@ -149,9 +149,9 @@ mod_05_help_button_server <- function(id, currentTab) {
                      <br> Check the <b>About</b> tab to learn more about what 
                      this app can do and where it came from! 
                      <br><br>Found a bug? Have feature suggestions? Email 
-                     support at <a href = 'mailto: toxonline@outlook.com'
+                     support at <a href = 'mailto: toxonline25@outlook.com'
                      style = 'color: #309676;'>
-                     toxonline@outlook.com</a></div>"
+                     toxonline25@outlook.com</a></div>"
           } else {
             img <- NULL
             text <- "Error in tab values: Please contact app admin regarding 
